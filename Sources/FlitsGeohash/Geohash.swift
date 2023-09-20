@@ -5,8 +5,6 @@
 //  Created by Tomas Harkema on 11/09/2023.
 //
 
-// I WANT TO MOVE THIS TO A SEPARATE REPO TO SHARE CODE WITH FM
-
 import Foundation
 
 public typealias Geohash11 = Geohash<GeohashLength11>
@@ -106,5 +104,13 @@ extension CLLocationCoordinate2D {
         } else {
             self = kCLLocationCoordinate2DInvalid
         }
+    }
+}
+
+// MARK: - logging
+
+extension Geohash: CustomStringConvertible {
+    public var description: String {
+        "📍<\(string):\(Length.length)>"
     }
 }
