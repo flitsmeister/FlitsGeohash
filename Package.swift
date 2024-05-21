@@ -7,18 +7,18 @@ let package = Package(
     products: [
         .library(
             name: "FlitsGeohash",
-            targets: ["FlitsGeohashSwift"]
+            targets: ["FlitsGeohash"]
         )
     ],
     targets: [
         .target(
-            name: "FlitsGeohashSwift",
+            name: "FlitsGeohash",
             dependencies: ["FlitsGeohashC"]
         ),
         .target(name: "FlitsGeohashC"),
         .testTarget(
-            name: "FlitsGeohashSwiftTests",
-            dependencies: ["FlitsGeohashSwift"]
+            name: "FlitsGeohashTests",
+            dependencies: ["FlitsGeohash"]
         )
     ]
 )

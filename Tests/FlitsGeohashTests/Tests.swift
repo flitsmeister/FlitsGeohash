@@ -7,7 +7,7 @@
 
 import XCTest
 import CoreLocation
-@testable import FlitsGeohashSwift
+@testable import FlitsGeohash
 
 final class Tests: XCTestCase {
 
