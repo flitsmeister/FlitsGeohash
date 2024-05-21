@@ -58,32 +58,32 @@ public typealias Geohash2 = LengthedGeohash<GeohashLength2>
 public typealias Geohash1 = LengthedGeohash<GeohashLength1>
 
 public struct LengthedGeohash<Length: GeohashLengthed>: Hashable {
-    public let value: String
+    public let string: String
 
-    public init(value: String) {
-        self.value = value
+    public init(string: String) {
+        self.string = string
     }
 
     public init(_ coordinate: CLLocationCoordinate2D) {
-        self.value = Geohash.hash(coordinate, length: Length.length)
+        self.string = Geohash.hash(coordinate, length: Length.length)
     }
 
     public func neighbors() -> Neighbors {
-        let neighbors = Geohash.neighbors(hash: value)
+        let neighbors = Geohash.neighbors(hash: string)
         return .init(
-            north: .init(value: neighbors.north),
-            south: .init(value: neighbors.south),
-            west: .init(value: neighbors.west),
-            east: .init(value: neighbors.east),
-            northWest: .init(value: neighbors.northWest),
-            northEast: .init(value: neighbors.northEast),
-            southWest: .init(value: neighbors.southWest),
-            southEast: .init(value: neighbors.southEast)
+            north: .init(string: neighbors.north),
+            south: .init(string: neighbors.south),
+            west: .init(string: neighbors.west),
+            east: .init(string: neighbors.east),
+            northWest: .init(string: neighbors.northWest),
+            northEast: .init(string: neighbors.northEast),
+            southWest: .init(string: neighbors.southWest),
+            southEast: .init(string: neighbors.southEast)
         )
     }
 
     public func adjacent(direction: Geohash.Direction) -> LengthedGeohash {
-        .init(value: Geohash.adjacent(hash: value, direction: direction))
+        .init(string: Geohash.adjacent(hash: string, direction: direction))
     }
 }
 
