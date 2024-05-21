@@ -59,7 +59,7 @@ GEOHASH_encode(double lat, double lon, unsigned int len)
     val1 = lon; range1 = &lon_range;
     val2 = lat; range2 = &lat_range;
 
-    for (int i=0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         bits = 0;
 
         SET_BIT(bits, mid, range1, val1, 4);
