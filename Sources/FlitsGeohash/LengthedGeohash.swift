@@ -57,7 +57,7 @@ public typealias Geohash3 = LengthedGeohash<GeohashLength3>
 public typealias Geohash2 = LengthedGeohash<GeohashLength2>
 public typealias Geohash1 = LengthedGeohash<GeohashLength1>
 
-public struct LengthedGeohash<Length: GeohashLengthed>: Hashable {
+public struct LengthedGeohash<Length: GeohashLengthed>: Hashable, Sendable {
     public let string: String
 
     public init(string: String) {
@@ -98,7 +98,7 @@ public struct LengthedGeohash<Length: GeohashLengthed>: Hashable {
 
 extension LengthedGeohash {
 
-    public struct Neighbors: Hashable {
+    public struct Neighbors: Hashable, Sendable {
         public let north: LengthedGeohash
         public let south: LengthedGeohash
         public let west: LengthedGeohash

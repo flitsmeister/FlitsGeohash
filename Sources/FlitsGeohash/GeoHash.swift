@@ -9,7 +9,7 @@ import CoreLocation
 
 public enum Geohash {
 
-    public enum Direction: UInt32 {
+    public enum Direction: UInt32, Sendable {
         case north = 0
         case east = 1
         case west = 2
@@ -20,7 +20,7 @@ public enum Geohash {
         }
     }
 
-    public struct Neighbors: Hashable {
+    public struct Neighbors: Hashable, Sendable {
         public let north: String
         public let south: String
         public let west: String
@@ -80,7 +80,7 @@ public enum Geohash {
         return neighbors
     }
 
-    public struct Region {
+    public struct Region: Sendable {
         let center: CLLocationCoordinate2D
         let latitudeDelta: CLLocationDegrees
         let longitudeDelta: CLLocationDegrees
