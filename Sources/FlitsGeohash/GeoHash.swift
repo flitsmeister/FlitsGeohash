@@ -80,7 +80,7 @@ public enum Geohash {
         return neighbors
     }
 
-    public struct GeohashRegion {
+    public struct Region {
         let center: CLLocationCoordinate2D
         let latitudeDelta: CLLocationDegrees
         let longitudeDelta: CLLocationDegrees
@@ -92,7 +92,7 @@ public enum Geohash {
         }
     }
 
-    public static func hashes(for region: GeohashRegion, length: UInt32) -> Set<String> {
+    public static func hashes(for region: Region, length: UInt32) -> Set<String> {
         let northWest = CLLocationCoordinate2D(
             latitude: region.center.latitude + region.latitudeDelta / 2,
             longitude: region.center.longitude - region.longitudeDelta / 2
