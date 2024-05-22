@@ -61,6 +61,7 @@ public struct LengthedGeohash<Length: GeohashLengthed>: Hashable {
     public let string: String
 
     public init(string: String) {
+        if string.count != Length.length { assertionFailure() }
         self.string = string
     }
 
@@ -84,6 +85,14 @@ public struct LengthedGeohash<Length: GeohashLengthed>: Hashable {
 
     public func adjacent(direction: Geohash.Direction) -> LengthedGeohash {
         .init(string: Geohash.adjacent(hash: string, direction: direction))
+    }
+
+    public func toLowerLength<L: GeohashLengthed>() -> LengthedGeohash<L>? {
+        let otherLength = L.length
+        if otherLength > Length.length {
+            return nil
+        }
+        return .init(string: String(string.prefix(Int(otherLength))))
     }
 }
 

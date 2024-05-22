@@ -4,9 +4,6 @@ import CoreLocation
 @testable import FlitsGeohash
 
 final class GeohashTests: XCTestCase {
-    func testDecode() {
-        XCTAssertNotNil(Geohash11(string: "u4pruydqqvj"))
-    }
 
     func testEncode() {
         let (lat, lon) = (57.64911063015461, 10.40743969380855)
@@ -50,5 +47,26 @@ final class GeohashTests: XCTestCase {
             southEast: .init(string: "u4pruydqquy")
         )
         XCTAssertEqual(neighbors, expectedNeighbors)
+    }
+
+    func testLowerLength() {
+        let (lat, lon) = (57.64911063015461, 10.40743969380855)
+        let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        let chars = "u4pruydqqvj"
+
+        let geohash11 = Geohash11(coordinate)
+        XCTAssertEqual(geohash11.string, String(chars.prefix(11)))
+
+        let geohash10: Geohash10? = geohash11.toLowerLength()
+        XCTAssertEqual(geohash10?.string, String(chars.prefix(10)))
+
+        let geohash2: Geohash2? = geohash11.toLowerLength()
+        XCTAssertEqual(geohash2?.string, String(chars.prefix(2)))
+
+        let geohash11FromLower: Geohash11? = geohash2?.toLowerLength()
+        XCTAssertNil(geohash11FromLower)
+
+        let geohashFromSame: Geohash11? = geohash11.toLowerLength()
+        XCTAssertEqual(geohashFromSame, geohash11)
     }
 }
