@@ -83,11 +83,6 @@ GEOHASH_encode(double lat, double lon, unsigned int len)
     return hash;
 }
 
-void
-GEOHASH_free_encode(char* hash) {
-    free(hash);
-}
-
 GEOHASH_neighbors*
 GEOHASH_get_neighbors(const char* hash)
 {
@@ -165,9 +160,4 @@ GEOHASH_get_adjacent(const char* hash, GEOHASH_direction dir)
     len = strlen(base);
     base[len] = BASE32_ENCODE_TABLE[idx];
     return base;
-}
-
-void
-GEOHASH_free_adjacent(char* hash) {
-    free(hash);
 }
