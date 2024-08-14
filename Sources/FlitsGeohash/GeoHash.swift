@@ -46,7 +46,12 @@ public enum Geohash {
         if length < 1, length > 22 {
             assertionFailure("length must be greater than 0 and less than 23")
         }
-        return string(from: GEOHASH_encode(coordinate.latitude, coordinate.longitude, length))
+        guard let pointer = GEOHASH_encode(coordinate.latitude, coordinate.longitude, length) else {
+            fatalError()
+        }
+        let hash = string(from: pointer)
+        free(pointer)
+        return hash
     }
 
     public static func adjacent(hash: String, direction: Direction) -> String {
@@ -57,7 +62,7 @@ public enum Geohash {
             fatalError()
         }
         let adjacent = string(from: pointer)
-        GEOHASH_free_adjacent(pointer)
+        free(pointer)
         return adjacent
     }
 

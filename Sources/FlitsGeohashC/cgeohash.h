@@ -23,10 +23,7 @@ typedef struct {
 } GEOHASH_neighbors;
 
 char* GEOHASH_encode(double latitude, double longitude, unsigned int hash_length);
-void GEOHASH_free_encode(char* hash);
-
 GEOHASH_neighbors* GEOHASH_get_neighbors(const char *hash);
 void GEOHASH_free_neighbors(GEOHASH_neighbors *neighbors);
 
 char* GEOHASH_get_adjacent(const char* hash, GEOHASH_direction dir);
-void GEOHASH_free_adjacent(char* hash);
