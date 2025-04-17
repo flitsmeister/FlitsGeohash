@@ -82,6 +82,58 @@ public struct LengthedGeohash<Length: GeohashLengthed>: Hashable, Sendable {
             southEast: .init(string: neighbors.southEast)
         )
     }
+    
+    public static func hashes(for region: Region) -> Set<Self> {
+        let northWest = CLLocationCoordinate2D(
+            latitude: region.center.latitude + region.latitudeDelta / 2,
+            longitude: region.center.longitude - region.longitudeDelta / 2
+        )
+        let northEast = CLLocationCoordinate2D(
+            latitude: region.center.latitude + region.latitudeDelta / 2,
+            longitude: region.center.longitude + region.longitudeDelta / 2
+        )
+        let southEast = CLLocationCoordinate2D(
+            latitude: region.center.latitude - region.latitudeDelta / 2,
+            longitude: region.center.longitude + region.longitudeDelta / 2
+        )
+        
+        let hashNorthWest = Self.init(northWest)
+        let hashNorthEast = Self.init(northEast)
+        let hashSouthEast = Self.init(southEast)
+        
+        var currentHash = hashNorthWest
+        var mostEastHash = hashNorthEast
+        var mostWestHash = hashNorthWest
+        
+        var hashes: Set<Self> = [currentHash]
+        while currentHash != hashSouthEast {
+            
+            guard hashNorthEast != hashNorthWest else {
+                // Our region fits inside a single geohash (width)
+                // This will produce 1 or more rows of a single column
+                // Only look in the southern direction, if you start looking east you will immediately go past the mostEastHash
+                // Immediately move to the next row until we find the hashSouthEast
+                mostEastHash = mostEastHash.adjacent(direction: .south)
+                mostWestHash = mostWestHash.adjacent(direction: .south)
+                currentHash = mostWestHash
+                hashes.insert(currentHash)
+                continue
+            }
+            
+            // Look for the next column by moving east
+            currentHash = currentHash.adjacent(direction: .east)
+            hashes.insert(currentHash)
+            
+            if currentHash == mostEastHash && currentHash != hashSouthEast {
+                // We are now at the most east row. Start again with a new row.
+                mostEastHash = mostEastHash.adjacent(direction: .south)
+                mostWestHash = mostWestHash.adjacent(direction: .south)
+                currentHash = mostWestHash
+                hashes.insert(currentHash)
+            }
+        }
+        return hashes
+    }
 
     public func adjacent(direction: Geohash.Direction) -> LengthedGeohash {
         .init(string: Geohash.adjacent(hash: string, direction: direction))
@@ -97,6 +149,18 @@ public struct LengthedGeohash<Length: GeohashLengthed>: Hashable, Sendable {
 }
 
 extension LengthedGeohash {
+
+    public struct Region: Sendable {
+        public let center: CLLocationCoordinate2D
+        public let latitudeDelta: CLLocationDegrees
+        public let longitudeDelta: CLLocationDegrees
+        
+        public init(center: CLLocationCoordinate2D, latitudeDelta: CLLocationDegrees, longitudeDelta: CLLocationDegrees) {
+            self.center = center
+            self.latitudeDelta = latitudeDelta
+            self.longitudeDelta = longitudeDelta
+        }
+    }
 
     public struct Neighbors: Hashable, Sendable {
         public let north: LengthedGeohash

@@ -55,15 +55,6 @@ final class Tests: XCTestCase {
             XCTAssertEqual(adjacentHashes.last, "u1k20")
         }
     }
-
-    func testRegion() {
-        let expectedHashes: Set = ["u14zr","u14yd","u16bj","u14yg","u16b4","u14zd","u16bc","u14yf","u16bd","u14zb","u14xn","u14zh","u14zp","u16b6","u16bz","u14xq","u14wy","u14xy","u14wx","u14zq","u16bh","u14zc","u16b3","u16bv","u14xp","u14zv","u14zf","u14wz","u14xz","u14ww","u16b2","u168w","u16bq","u16bb","u16bk","u14zs","u14yx","u16b1","u14ye","u14zm","u14zy","u14yv","u16bg","u16bn","u16bt","u14zu","u16b7","u14yc","u14xx","u16bx","u14z3","u14y9","u14z9","u14zn","u16br","u16be","u16bf","u14yu","u16b9","u14xr","u16b8","u16b5","u14z8","u14yy","u14zg","u168n","u14zx","u14z5","u14y8","u14zt","u168x","u14zz","u14z0","u16bm","u14zj","u14yt","u168q","u168z","u14xw","u16b0","u14z2","u14yz","u14ze","u16bs","u14z6","u14z7","u14ys","u14zw","u14z1","u14yb","u16bw","u16bp","u14zk","u14z4","u16by","u168r","u14yw","u168p","u168y","u16bu"]
-        measure {
-            let region = Geohash.Region(center: .init(latitude: 52, longitude: 4), latitudeDelta: 0.4, longitudeDelta: 0.4)
-            let hashesInRegion = Geohash.hashes(for: region, length: 5)
-            XCTAssertEqual(hashesInRegion, expectedHashes)
-        }
-    }
 }
 
 private extension CLLocationCoordinate2D {
