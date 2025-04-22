@@ -142,7 +142,7 @@ public struct LengthedGeohash<Length: GeohashLengthed>: Hashable, Sendable {
     public func toLowerLength<L: GeohashLengthed>() -> LengthedGeohash<L>? {
         let otherLength = L.length
         if otherLength == Length.length {
-            return self as? LengthedGeohash<L>
+            return .init(string: string)
         }
         if otherLength > Length.length {
             return nil
