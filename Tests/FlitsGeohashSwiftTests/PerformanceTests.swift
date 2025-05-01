@@ -1,5 +1,5 @@
 //
-//  Tests.swift
+//  PerformanceTests.swift
 //
 //
 //  Created by Maarten Zonneveld on 08/05/2024.
@@ -9,7 +9,7 @@ import XCTest
 import CoreLocation
 @testable import FlitsGeohash
 
-final class Tests: XCTestCase {
+final class PerformanceTests: XCTestCase {
 
     private static let size = 100_000
     private static let array = CLLocationCoordinate2D.testCollection(size: size)
