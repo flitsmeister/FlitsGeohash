@@ -163,6 +163,17 @@ extension LengthedGeohash {
         public let southWest: LengthedGeohash
         public let southEast: LengthedGeohash
 
+        public init(north: LengthedGeohash, south: LengthedGeohash, west: LengthedGeohash, east: LengthedGeohash, northWest: LengthedGeohash, northEast: LengthedGeohash, southWest: LengthedGeohash, southEast: LengthedGeohash) {
+            self.north = north
+            self.south = south
+            self.west = west
+            self.east = east
+            self.northWest = northWest
+            self.northEast = northEast
+            self.southWest = southWest
+            self.southEast = southEast
+        }
+
         public var allNeighbors: Set<LengthedGeohash> {
             [north, south, west, east, northWest, northEast, southWest, southEast]
         }
