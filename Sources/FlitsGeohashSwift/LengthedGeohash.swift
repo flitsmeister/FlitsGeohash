@@ -5,6 +5,7 @@
 //  Created by Maarten Zonneveld on 21/05/2024.
 //
 
+import FlitsGeohashC
 import CoreLocation
 
 public protocol GeohashLengthed {

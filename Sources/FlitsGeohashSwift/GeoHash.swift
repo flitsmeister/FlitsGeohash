@@ -96,6 +96,21 @@ public enum Geohash {
         GEOHASH_free_neighbors(pointer)
         return neighbors
     }
+    
+    public static func hashesC(
+        centerCoordinate: CLLocationCoordinate2D,
+        latitudeDelta: CLLocationDegrees,
+        longitudeDelta: CLLocationDegrees,
+        length: UInt32
+    ) -> [String] {
+        var cArray = GEOHASH_hashes_for_region(centerCoordinate.latitude, centerCoordinate.longitude, latitudeDelta, longitudeDelta, length)
+        let buffer = UnsafeBufferPointer(start: cArray.hashes, count: cArray.count)
+        let result = buffer.compactMap {
+            string(from: $0!)
+        }
+        GEOHASH_free_array(&cArray)
+        return result
+    }
 }
 
 extension Geohash {
