@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 #define MAX_HASH_LENGTH 22
+#define MAX_ITERATIONS 100000
 
 #define SET_BIT(bits, mid, range, val, bit) \
     mid = (range->min + range->max) / 2.0; \
@@ -164,71 +165,94 @@ GEOHASH_get_adjacent(const char* hash, GEOHASH_direction dir)
 
 void add_hash(GeohashArray* array, char* hash) {
     if (array->count >= array->capacity) {
-        array->capacity *= 2;
-        array->hashes = realloc(array->hashes, array->capacity * sizeof(char*));
+        int new_capacity = array->capacity * 2;
+        char** new_hashes = realloc(array->hashes, new_capacity * sizeof(char*));
+        if (!new_hashes) {
+            // Allocation failed
+            GEOHASH_free_array(array);
+            exit(EXIT_FAILURE);
+        }
+        array->hashes = new_hashes;
+        array->capacity = new_capacity;
     }
     array->hashes[array->count++] = hash;
 }
 
-int geohash_equals(char* a, char* b) {
+int geohash_equals(const char* a, const char* b) {
     return strcmp(a, b) == 0;
 }
 
-GeohashArray GEOHASH_hashes_for_region(double centerLatitude, double centerLongitude, double latitudeDelta, double longitudeDelta, unsigned int len) {
+GeohashArray
+GEOHASH_hashes_for_region(double centerLat, double centerLon, double latDelta, double lonDelta, unsigned int len) {
     
-    double northLatitude = centerLatitude + latitudeDelta / 2;
-    double southLatitude = centerLatitude - latitudeDelta / 2;
-    double westLongitude = centerLongitude - longitudeDelta / 2;
-    double eastLongitude = centerLongitude + longitudeDelta / 2;
+    double north = centerLat + latDelta / 2.0;
+    double south = centerLat - latDelta / 2.0;
+    double west  = centerLon - lonDelta / 2.0;
+    double east  = centerLon + lonDelta / 2.0;
     
-    char* hashNorthWest = GEOHASH_encode(northLatitude, westLongitude, len);
-    char* hashNorthEast = GEOHASH_encode(northLatitude, eastLongitude, len);
-    char* hashSouthEast = GEOHASH_encode(southLatitude, eastLongitude, len);
+    char* nw = GEOHASH_encode(north, west, len);
+    char* ne = GEOHASH_encode(north, east, len);
+    char* se = GEOHASH_encode(south, east, len);
     
-    char* currentHash = strdup(hashNorthWest);
-    char* mostEastHash = strdup(hashNorthEast);
-    char* mostWestHash = strdup(hashNorthWest);
+    char* current = strdup(nw);
+    char* eastLimit = strdup(ne);
+    char* westStart = strdup(nw);
     
-    GeohashArray result = {.hashes = malloc(128 * sizeof(char*)), .count = 0, .capacity = 128};
-    add_hash(&result, strdup(currentHash));
+    GeohashArray result = {
+        .hashes = malloc(128 * sizeof(char*)),
+        .count = 0,
+        .capacity = 128
+    };
+    if (!result.hashes) {
+        // Allocation failed
+        exit(EXIT_FAILURE);
+    }
     
-    while (!geohash_equals(currentHash, hashSouthEast)) {
-        if (geohash_equals(hashNorthEast, hashNorthWest)) {
+    add_hash(&result, strdup(current));
+    int maxIterations = MAX_ITERATIONS; // Prevent infinite loops
+
+    while (!geohash_equals(current, se) && maxIterations-- > 0) {
+        if (geohash_equals(nw, ne)) {
             // Single column case
-            mostEastHash = GEOHASH_get_adjacent(mostEastHash, GEOHASH_SOUTH);
-            mostWestHash = GEOHASH_get_adjacent(mostWestHash, GEOHASH_SOUTH);
-            currentHash = strdup(mostWestHash);
-            add_hash(&result, strdup(currentHash));
+            char* nextSouth = GEOHASH_get_adjacent(westStart, GEOHASH_SOUTH);
+            free(westStart);
+            westStart = nextSouth;
+            free(current);
+            current = strdup(westStart);
+            add_hash(&result, strdup(current));
             continue;
         }
         
         // Move east
-        char* tmp = currentHash;
-        currentHash = GEOHASH_get_adjacent(currentHash, GEOHASH_EAST);
-        free(tmp);
-        add_hash(&result, strdup(currentHash));
+        char* next = GEOHASH_get_adjacent(current, GEOHASH_EAST);
+        free(current);
+        current = next;
+        add_hash(&result, strdup(current));
 
-        if (geohash_equals(currentHash, mostEastHash) && !geohash_equals(currentHash, hashSouthEast)) {
-            tmp = mostEastHash;
-            mostEastHash = GEOHASH_get_adjacent(mostEastHash, GEOHASH_SOUTH);
-            free(tmp);
+        if (geohash_equals(current, eastLimit) && !geohash_equals(current, se)) {
+            char* tmp;
             
-            tmp = mostWestHash;
-            mostWestHash = GEOHASH_get_adjacent(mostWestHash, GEOHASH_SOUTH);
-            free(tmp);
+            tmp = GEOHASH_get_adjacent(eastLimit, GEOHASH_SOUTH);
+            free(eastLimit);
+            eastLimit = tmp;
             
-            free(currentHash);
-            currentHash = strdup(mostWestHash);
-            add_hash(&result, strdup(currentHash));
+            tmp = GEOHASH_get_adjacent(westStart, GEOHASH_SOUTH);
+            free(westStart);
+            westStart = tmp;
+            
+            free(current);
+            current = strdup(westStart);
+            add_hash(&result, strdup(current));
         }
     }
     
-    free(hashNorthWest);
-    free(hashNorthEast);
-    free(hashSouthEast);
-    free(currentHash);
-    free(mostEastHash);
-    free(mostWestHash);
+    // Cleanup
+    free(nw);
+    free(ne);
+    free(se);
+    free(current);
+    free(eastLimit);
+    free(westStart);
     
     return result;
 }

@@ -27,7 +27,7 @@ typedef struct {
 typedef struct {
     char** hashes;
     size_t count;
-    size_t capacity;
+    int capacity;
 } GeohashArray;
 
 char* GEOHASH_encode(double latitude, double longitude, unsigned int hash_length);

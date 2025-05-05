@@ -73,6 +73,33 @@ final class PerformanceTests: XCTestCase {
         }
         XCTAssertEqual(hashes.sorted(), expectedHashes)
     }
+    
+    func testSmallRegionReturnsNonEmptyArray() {
+        let hashes = Geohash.hashesForRegion(centerCoordinate: .init(latitude: 52, longitude: 5), latitudeDelta: 0.001, longitudeDelta: 0.001, length: 6)
+        XCTAssertGreaterThan(hashes.count, 0)
+    }
+    
+    func testLargeRegionReturnsManyHashes() {
+        let hashes = Geohash.hashesForRegion(centerCoordinate: .init(latitude: 52, longitude: 5), latitudeDelta: 0.5, longitudeDelta: 0.5, length: 6)
+        XCTAssertGreaterThan(hashes.count, 1000)
+    }
+    
+    func testFreeingHashArrayWorks() {
+        var array = GEOHASH_hashes_for_region(52, 5, 0.02, 0.02, 6)
+        GEOHASH_free_array(&array)
+        
+        XCTAssertEqual(array.count, 0, "After free, count should be zero")
+        XCTAssertNil(array.hashes, "After free, hashes should be nil")
+        XCTAssertEqual(array.capacity, 0, "After free, capacity should be zero")
+    }
+    
+    func testEdgeAlignedRegion() {
+        // Ensures that when center lies on a boundary, results are still valid
+        let hashes = Geohash.hashesForRegion(centerCoordinate: .init(latitude: 0, longitude: 0), latitudeDelta: 0.01, longitudeDelta: 0.01, length: 6)
+            .sorted()
+            .joined(separator: ",")
+        XCTAssertEqual(hashes, "7zzzzz,ebpbpb,kpbpbp,s00000")
+    }
 }
 
 private extension CLLocationCoordinate2D {
