@@ -94,7 +94,6 @@ final class PerformanceTests: XCTestCase {
     }
     
     func testEdgeAlignedRegion() {
-        // Ensures that when center lies on a boundary, results are still valid
         let hashes = Geohash.hashesForRegion(centerCoordinate: .init(latitude: 0, longitude: 0), latitudeDelta: 0.01, longitudeDelta: 0.01, length: 6)
             .sorted()
             .joined(separator: ",")
