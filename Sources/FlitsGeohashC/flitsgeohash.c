@@ -170,6 +170,7 @@ void add_hash(GeohashArray* array, char* hash) {
         if (!new_hashes) {
             // Allocation failed
             GEOHASH_free_array(array);
+            free(hash);
             exit(EXIT_FAILURE);
         }
         array->hashes = new_hashes;
@@ -180,6 +181,20 @@ void add_hash(GeohashArray* array, char* hash) {
 
 int geohash_equals(const char* a, const char* b) {
     return strcmp(a, b) == 0;
+}
+
+char* GEOHASH_clone(const char* hash) {
+    if (!hash) {
+        exit(EXIT_FAILURE);
+        return NULL;
+    }
+    
+    char* clone = strdup(hash);
+    if (!clone) {
+        exit(EXIT_FAILURE);
+        return NULL;
+    }
+    return clone;
 }
 
 GeohashArray
@@ -194,9 +209,9 @@ GEOHASH_hashes_for_region(double centerLat, double centerLon, double latDelta, d
     char* ne = GEOHASH_encode(north, east, len);
     char* se = GEOHASH_encode(south, east, len);
     
-    char* current = strdup(nw);
-    char* eastLimit = strdup(ne);
-    char* westStart = strdup(nw);
+    char* current = GEOHASH_clone(nw);
+    char* eastLimit = GEOHASH_clone(ne);
+    char* westStart = GEOHASH_clone(nw);
     
     GeohashArray result = {
         .hashes = malloc(128 * sizeof(char*)),
@@ -208,9 +223,9 @@ GEOHASH_hashes_for_region(double centerLat, double centerLon, double latDelta, d
         exit(EXIT_FAILURE);
     }
     
-    add_hash(&result, strdup(current));
+    add_hash(&result, GEOHASH_clone(current));
+    
     int maxIterations = MAX_ITERATIONS; // Prevent infinite loops
-
     while (!geohash_equals(current, se) && maxIterations-- > 0) {
         if (geohash_equals(nw, ne)) {
             // Single column case
@@ -218,8 +233,8 @@ GEOHASH_hashes_for_region(double centerLat, double centerLon, double latDelta, d
             free(westStart);
             westStart = nextSouth;
             free(current);
-            current = strdup(westStart);
-            add_hash(&result, strdup(current));
+            current = GEOHASH_clone(westStart);
+            add_hash(&result, GEOHASH_clone(current));
             continue;
         }
         
@@ -227,7 +242,7 @@ GEOHASH_hashes_for_region(double centerLat, double centerLon, double latDelta, d
         char* next = GEOHASH_get_adjacent(current, GEOHASH_EAST);
         free(current);
         current = next;
-        add_hash(&result, strdup(current));
+        add_hash(&result, GEOHASH_clone(current));
 
         if (geohash_equals(current, eastLimit) && !geohash_equals(current, se)) {
             char* tmp;
@@ -241,8 +256,8 @@ GEOHASH_hashes_for_region(double centerLat, double centerLon, double latDelta, d
             westStart = tmp;
             
             free(current);
-            current = strdup(westStart);
-            add_hash(&result, strdup(current));
+            current = GEOHASH_clone(westStart);
+            add_hash(&result, GEOHASH_clone(current));
         }
     }
     
