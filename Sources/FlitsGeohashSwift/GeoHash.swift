@@ -92,7 +92,7 @@ public enum Geohash {
         length: UInt32
     ) -> [String] {
         var cArray = GEOHASH_hashes_for_region(centerCoordinate.latitude, centerCoordinate.longitude, latitudeDelta, longitudeDelta, length)
-        let buffer = UnsafeBufferPointer(start: cArray.hashes, count: cArray.count)
+        let buffer = UnsafeBufferPointer(start: cArray.hashes, count: Int(cArray.count))
         let result = buffer.compactMap {
             string(from: $0!)
         }

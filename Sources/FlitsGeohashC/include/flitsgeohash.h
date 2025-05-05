@@ -1,6 +1,4 @@
 
-#include <ctype.h>
-
 typedef enum {
     GEOHASH_NORTH = 0,
     GEOHASH_EAST,
@@ -26,7 +24,7 @@ typedef struct {
 
 typedef struct {
     char** hashes;
-    size_t count;
+    int count;
     int capacity;
 } GeohashArray;
 
