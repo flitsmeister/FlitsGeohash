@@ -37,5 +37,4 @@ void GEOHASH_free_neighbors(GEOHASH_neighbors *neighbors);
 char* GEOHASH_get_adjacent(const char* hash, GEOHASH_direction dir);
 
 GeohashArray GEOHASH_hashes_for_region(double centerLatitude, double centerLongitude, double latitudeDelta, double longitudeDelta, unsigned int len);
-
 void GEOHASH_free_array(GeohashArray* array);
