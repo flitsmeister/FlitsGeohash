@@ -97,6 +97,16 @@ public struct LengthedGeohash<Length: GeohashLengthed>: Hashable, Sendable {
         }
         return .init(string: String(string.prefix(Int(otherLength))))
     }
+    
+    public static func hashesForRegion(centerCoordinate: CLLocationCoordinate2D, latitudeDelta: CLLocationDegrees, longitudeDelta: CLLocationDegrees) -> [LengthedGeohash] {
+        Geohash.hashesForRegion(
+            centerCoordinate: centerCoordinate,
+            latitudeDelta: latitudeDelta,
+            longitudeDelta: longitudeDelta,
+            length: Length.length
+        )
+        .map { .init(string: $0) }
+    }
 }
 
 extension LengthedGeohash {

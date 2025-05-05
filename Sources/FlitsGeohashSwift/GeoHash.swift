@@ -85,7 +85,7 @@ public enum Geohash {
         return neighbors
     }
     
-    public static func hashes(
+    public static func hashesForRegion(
         centerCoordinate: CLLocationCoordinate2D,
         latitudeDelta: CLLocationDegrees,
         longitudeDelta: CLLocationDegrees,

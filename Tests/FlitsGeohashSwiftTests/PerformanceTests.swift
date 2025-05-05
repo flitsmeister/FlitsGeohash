@@ -69,7 +69,7 @@ final class PerformanceTests: XCTestCase {
         let center = CLLocationCoordinate2D(latitude: 52, longitude: 4)
         var hashes: [String] = []
         measure {
-            hashes = Geohash.hashes(centerCoordinate: center, latitudeDelta: 0.4, longitudeDelta: 0.4, length: 5)
+            hashes = Geohash.hashesForRegion(centerCoordinate: center, latitudeDelta: 0.4, longitudeDelta: 0.4, length: 5)
         }
         XCTAssertEqual(hashes.sorted(), expectedHashes)
     }

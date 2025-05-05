@@ -48,6 +48,16 @@ final class GeohashTests: XCTestCase {
         )
         XCTAssertEqual(neighbors, expectedNeighbors)
     }
+    
+    func testRegion() {
+        let hashes = Geohash3.hashesForRegion(
+            centerCoordinate: .init(latitude: 57.64911063015461, longitude: 10.40743969380855),
+            latitudeDelta: 2,
+            longitudeDelta: 2
+        )
+        let hashesString = hashes.map(\.string).sorted().joined(separator: ",")
+        XCTAssertEqual(hashesString, "u4n,u4p,u4q,u4r,u60,u62")
+    }
 
     func testLowerLength() {
         let (lat, lon) = (57.64911063015461, 10.40743969380855)
