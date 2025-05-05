@@ -20,18 +20,6 @@ public enum Geohash {
         }
     }
 
-    public struct Region: Sendable {
-        public let center: CLLocationCoordinate2D
-        public let latitudeDelta: CLLocationDegrees
-        public let longitudeDelta: CLLocationDegrees
-        
-        public init(center: CLLocationCoordinate2D, latitudeDelta: CLLocationDegrees, longitudeDelta: CLLocationDegrees) {
-            self.center = center
-            self.latitudeDelta = latitudeDelta
-            self.longitudeDelta = longitudeDelta
-        }
-    }
-
     public struct Neighbors: Hashable, Sendable {
         public let north: String
         public let south: String
@@ -95,6 +83,21 @@ public enum Geohash {
         )
         GEOHASH_free_neighbors(pointer)
         return neighbors
+    }
+    
+    public static func hashesForRegion(
+        centerCoordinate: CLLocationCoordinate2D,
+        latitudeDelta: CLLocationDegrees,
+        longitudeDelta: CLLocationDegrees,
+        length: UInt32
+    ) -> [String] {
+        var cArray = GEOHASH_hashes_for_region(centerCoordinate.latitude, centerCoordinate.longitude, latitudeDelta, longitudeDelta, length)
+        let buffer = UnsafeBufferPointer(start: cArray.hashes, count: Int(cArray.count))
+        let result = buffer.compactMap {
+            string(from: $0!)
+        }
+        GEOHASH_free_array(&cArray)
+        return result
     }
 }
 

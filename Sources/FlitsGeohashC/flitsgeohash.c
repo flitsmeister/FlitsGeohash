@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 #define MAX_HASH_LENGTH 22
+#define MAX_ITERATIONS 100000
 
 #define SET_BIT(bits, mid, range, val, bit) \
     mid = (range->min + range->max) / 2.0; \
@@ -122,7 +123,7 @@ GEOHASH_free_neighbors(GEOHASH_neighbors *neighbors)
 char*
 GEOHASH_get_adjacent(const char* hash, GEOHASH_direction dir)
 {
-    int len, idx;
+    size_t len, idx;
     const char *border_table, *neighbor_table;
     char *base, *refined_base, *ptr, last;
 
@@ -160,4 +161,123 @@ GEOHASH_get_adjacent(const char* hash, GEOHASH_direction dir)
     len = strlen(base);
     base[len] = BASE32_ENCODE_TABLE[idx];
     return base;
+}
+
+void add_hash(GeohashArray* array, char* hash) {
+    if (array->count >= array->capacity) {
+        int new_capacity = array->capacity * 2;
+        char** new_hashes = realloc(array->hashes, new_capacity * sizeof(char*));
+        if (!new_hashes) {
+            // Allocation failed
+            GEOHASH_free_array(array);
+            free(hash);
+            exit(EXIT_FAILURE);
+        }
+        array->hashes = new_hashes;
+        array->capacity = new_capacity;
+    }
+    array->hashes[array->count++] = hash;
+}
+
+int geohash_equals(const char* a, const char* b) {
+    return strcmp(a, b) == 0;
+}
+
+char* GEOHASH_clone(const char* hash) {
+    if (!hash) {
+        exit(EXIT_FAILURE);
+        return NULL;
+    }
+    
+    char* clone = strdup(hash);
+    if (!clone) {
+        exit(EXIT_FAILURE);
+        return NULL;
+    }
+    return clone;
+}
+
+GeohashArray
+GEOHASH_hashes_for_region(double centerLat, double centerLon, double latDelta, double lonDelta, unsigned int len) {
+    
+    double north = centerLat + latDelta / 2.0;
+    double south = centerLat - latDelta / 2.0;
+    double west  = centerLon - lonDelta / 2.0;
+    double east  = centerLon + lonDelta / 2.0;
+    
+    char* nw = GEOHASH_encode(north, west, len);
+    char* ne = GEOHASH_encode(north, east, len);
+    char* se = GEOHASH_encode(south, east, len);
+    
+    char* current = GEOHASH_clone(nw);
+    char* eastLimit = GEOHASH_clone(ne);
+    char* westStart = GEOHASH_clone(nw);
+    
+    GeohashArray result = {
+        .hashes = malloc(128 * sizeof(char*)),
+        .count = 0,
+        .capacity = 128
+    };
+    if (!result.hashes) {
+        // Allocation failed
+        exit(EXIT_FAILURE);
+    }
+    
+    add_hash(&result, GEOHASH_clone(current));
+    
+    int maxIterations = MAX_ITERATIONS; // Prevent infinite loops
+    while (!geohash_equals(current, se) && maxIterations-- > 0) {
+        if (geohash_equals(nw, ne)) {
+            // Single column case
+            char* nextSouth = GEOHASH_get_adjacent(westStart, GEOHASH_SOUTH);
+            free(westStart);
+            westStart = nextSouth;
+            free(current);
+            current = GEOHASH_clone(westStart);
+            add_hash(&result, GEOHASH_clone(current));
+            continue;
+        }
+        
+        // Move east
+        char* next = GEOHASH_get_adjacent(current, GEOHASH_EAST);
+        free(current);
+        current = next;
+        add_hash(&result, GEOHASH_clone(current));
+
+        if (geohash_equals(current, eastLimit) && !geohash_equals(current, se)) {
+            char* tmp;
+            
+            tmp = GEOHASH_get_adjacent(eastLimit, GEOHASH_SOUTH);
+            free(eastLimit);
+            eastLimit = tmp;
+            
+            tmp = GEOHASH_get_adjacent(westStart, GEOHASH_SOUTH);
+            free(westStart);
+            westStart = tmp;
+            
+            free(current);
+            current = GEOHASH_clone(westStart);
+            add_hash(&result, GEOHASH_clone(current));
+        }
+    }
+    
+    // Cleanup
+    free(nw);
+    free(ne);
+    free(se);
+    free(current);
+    free(eastLimit);
+    free(westStart);
+    
+    return result;
+}
+
+void GEOHASH_free_array(GeohashArray* array) {
+    for (int i = 0; i < array->count; i++) {
+        free(array->hashes[i]);
+    }
+    free(array->hashes);
+    array->hashes = NULL;
+    array->count = 0;
+    array->capacity = 0;
 }
