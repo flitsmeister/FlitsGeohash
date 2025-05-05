@@ -25,11 +25,6 @@ typedef struct {
 } GEOHASH_neighbors;
 
 typedef struct {
-    double latitude;
-    double longitude;
-} Coordinate;
-
-typedef struct {
     char** hashes;
     size_t count;
     size_t capacity;
