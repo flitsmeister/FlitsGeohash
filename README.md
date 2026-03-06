@@ -121,3 +121,7 @@ swift test
 ```
 
 The test suite includes correctness checks and performance-oriented coverage for encoding, adjacency, neighbors, and region generation.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
