@@ -5,7 +5,14 @@
 //  Created by Maarten Zonneveld on 07/05/2024.
 //
 
+#if canImport(CoreLocation)
 import CoreLocation
+#endif
+#if os(Linux)
+import Glibc
+#else
+import Darwin
+#endif
 
 public enum Geohash {
 
@@ -40,12 +47,8 @@ public enum Geohash {
     }
 
     public static func hash(_ coordinate: CLLocationCoordinate2D, length: UInt32) -> String {
-        if !CLLocationCoordinate2DIsValid(coordinate) {
-            assertionFailure("coordinate is invalid")
-        }
-        if length < 1, length > 22 {
-            assertionFailure("length must be greater than 0 and less than 23")
-        }
+        precondition(CLLocationCoordinate2DIsValid(coordinate), "coordinate is invalid")
+        precondition(length > 0 && length < 23, "length must be greater than 0 and less than 23")
         guard let pointer = GEOHASH_encode(coordinate.latitude, coordinate.longitude, length) else {
             fatalError()
         }
