@@ -11,11 +11,30 @@ on:
 
 jobs:
   build:
-
-    runs-on: macos-latest
+    name: Build and test on ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu
+            os: ubuntu-latest
+            swift-version: "6.0"
+          - name: macOS
+            os: macos-latest
+            swift-version: ""
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
+    - uses: swift-actions/setup-swift@v2
+      if: matrix.swift-version != ''
+      with:
+        swift-version: ${{ matrix.swift-version }}
+    - name: Show toolchain
+      run: swift --version
+    - name: Show Xcode version
+      if: runner.os == 'macOS'
+      run: xcodebuild -version
     - name: Build
       run: swift build -v
     - name: Run tests

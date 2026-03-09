@@ -5,7 +5,14 @@
 //  Created by Maarten Zonneveld on 07/05/2024.
 //
 
+#if canImport(CoreLocation)
 import CoreLocation
+#endif
+#if os(Linux)
+import Glibc
+#else
+import Darwin
+#endif
 
 public enum Geohash {
 
@@ -40,12 +47,8 @@ public enum Geohash {
     }
 
     public static func hash(_ coordinate: CLLocationCoordinate2D, length: UInt32) -> String {
-        if !CLLocationCoordinate2DIsValid(coordinate) {
-            assertionFailure("coordinate is invalid")
-        }
-        if length < 1, length > 22 {
-            assertionFailure("length must be greater than 0 and less than 23")
-        }
+        precondition(CLLocationCoordinate2DIsValid(coordinate), "coordinate is invalid")
+        precondition(length > 0 && length < 23, "length must be greater than 0 and less than 23")
         guard let pointer = GEOHASH_encode(coordinate.latitude, coordinate.longitude, length) else {
             fatalError()
         }
@@ -55,34 +58,35 @@ public enum Geohash {
     }
 
     public static func adjacent(hash: String, direction: Direction) -> String {
-        guard let pointer = GEOHASH_get_adjacent(
-            hash.cString(using: .ascii),
-            direction.cValue
-        ) else {
-            fatalError()
+        hash.withCString { hashCString in
+            guard let pointer = GEOHASH_get_adjacent(hashCString, direction.cValue) else {
+                fatalError()
+            }
+            let adjacent = string(from: pointer)
+            free(pointer)
+            return adjacent
         }
-        let adjacent = string(from: pointer)
-        free(pointer)
-        return adjacent
     }
 
     public static func neighbors(hash: String) -> Neighbors {
-        let pointer = GEOHASH_get_neighbors(hash.cString(using: .ascii))
-        guard let cNeighbors = pointer?.pointee else {
-            fatalError()
+        hash.withCString { hashCString in
+            guard let pointer = GEOHASH_get_neighbors(hashCString) else {
+                fatalError()
+            }
+            let cNeighbors = pointer.pointee
+            let neighbors = Neighbors(
+                north: string(from: cNeighbors.north),
+                south: string(from: cNeighbors.south),
+                west: string(from: cNeighbors.west),
+                east: string(from: cNeighbors.east),
+                northWest: string(from: cNeighbors.north_west),
+                northEast: string(from: cNeighbors.north_east),
+                southWest: string(from: cNeighbors.south_west),
+                southEast: string(from: cNeighbors.south_east)
+            )
+            GEOHASH_free_neighbors(pointer)
+            return neighbors
         }
-        let neighbors = Neighbors(
-            north: string(from: cNeighbors.north),
-            south: string(from: cNeighbors.south),
-            west: string(from: cNeighbors.west),
-            east: string(from: cNeighbors.east),
-            northWest: string(from: cNeighbors.north_west),
-            northEast: string(from: cNeighbors.north_east),
-            southWest: string(from: cNeighbors.south_west),
-            southEast: string(from: cNeighbors.south_east)
-        )
-        GEOHASH_free_neighbors(pointer)
-        return neighbors
     }
     
     public static func hashesForRegion(

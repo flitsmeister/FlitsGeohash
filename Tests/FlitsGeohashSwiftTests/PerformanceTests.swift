@@ -6,7 +6,9 @@
 //
 
 import XCTest
+#if canImport(CoreLocation)
 import CoreLocation
+#endif
 import FlitsGeohash
 
 final class PerformanceTests: XCTestCase {

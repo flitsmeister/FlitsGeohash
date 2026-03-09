@@ -5,7 +5,9 @@
 //  Created by Maarten Zonneveld on 08/05/2024.
 //
 
+#if canImport(CoreLocation)
 import CoreLocation
+#endif
 
 public extension CLLocationCoordinate2D {
     

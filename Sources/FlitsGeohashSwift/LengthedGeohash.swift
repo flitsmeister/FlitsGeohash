@@ -5,7 +5,9 @@
 //  Created by Maarten Zonneveld on 21/05/2024.
 //
 
+#if canImport(CoreLocation)
 import CoreLocation
+#endif
 
 public protocol GeohashLengthed {
     static var length: UInt32 { get }
