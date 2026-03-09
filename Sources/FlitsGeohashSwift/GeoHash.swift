@@ -58,34 +58,35 @@ public enum Geohash {
     }
 
     public static func adjacent(hash: String, direction: Direction) -> String {
-        guard let pointer = GEOHASH_get_adjacent(
-            hash.cString(using: .ascii),
-            direction.cValue
-        ) else {
-            fatalError()
+        hash.withCString { hashCString in
+            guard let pointer = GEOHASH_get_adjacent(hashCString, direction.cValue) else {
+                fatalError()
+            }
+            let adjacent = string(from: pointer)
+            free(pointer)
+            return adjacent
         }
-        let adjacent = string(from: pointer)
-        free(pointer)
-        return adjacent
     }
 
     public static func neighbors(hash: String) -> Neighbors {
-        let pointer = GEOHASH_get_neighbors(hash.cString(using: .ascii))
-        guard let cNeighbors = pointer?.pointee else {
-            fatalError()
+        hash.withCString { hashCString in
+            guard let pointer = GEOHASH_get_neighbors(hashCString) else {
+                fatalError()
+            }
+            let cNeighbors = pointer.pointee
+            let neighbors = Neighbors(
+                north: string(from: cNeighbors.north),
+                south: string(from: cNeighbors.south),
+                west: string(from: cNeighbors.west),
+                east: string(from: cNeighbors.east),
+                northWest: string(from: cNeighbors.north_west),
+                northEast: string(from: cNeighbors.north_east),
+                southWest: string(from: cNeighbors.south_west),
+                southEast: string(from: cNeighbors.south_east)
+            )
+            GEOHASH_free_neighbors(pointer)
+            return neighbors
         }
-        let neighbors = Neighbors(
-            north: string(from: cNeighbors.north),
-            south: string(from: cNeighbors.south),
-            west: string(from: cNeighbors.west),
-            east: string(from: cNeighbors.east),
-            northWest: string(from: cNeighbors.north_west),
-            northEast: string(from: cNeighbors.north_east),
-            southWest: string(from: cNeighbors.south_west),
-            southEast: string(from: cNeighbors.south_east)
-        )
-        GEOHASH_free_neighbors(pointer)
-        return neighbors
     }
     
     public static func hashesForRegion(
