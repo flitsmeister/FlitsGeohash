@@ -1,6 +1,6 @@
 # FlitsGeohash
 
-`FlitsGeohash` is a Swift package for working with geohashes on Apple platforms. It wraps a small C implementation with a Swift-friendly API for encoding coordinates, finding adjacent cells, collecting neighbors, and generating the geohashes that cover a region.
+`FlitsGeohash` is a Swift package for working with geohashes on Apple platforms and Linux. It wraps a small C implementation with a Swift-friendly API for encoding coordinates, finding adjacent cells, collecting neighbors, and generating the geohashes that cover a region.
 
 ## Features
 
@@ -9,12 +9,15 @@
 - Fetch all 8 neighboring geohashes
 - Generate the geohashes that cover a map region
 - Use strongly typed fixed-length geohashes for common lengths
+- Use the same coordinate API on Linux without depending on `CoreLocation`
 
 ## Requirements
 
 - Swift 6.0+
-- `CoreLocation`
 - Apple platforms where `CoreLocation` is available
+- Linux
+
+When `CoreLocation` is unavailable, `FlitsGeohash` provides compatible `CLLocationCoordinate2D`, `CLLocationDegrees`, and `CLLocationCoordinate2DIsValid` definitions so the public API stays the same across platforms.
 
 ## Installation
 
@@ -44,7 +47,9 @@ targets: [
 ### Encode a coordinate
 
 ```swift
+#if canImport(CoreLocation)
 import CoreLocation
+#endif
 import FlitsGeohash
 
 let coordinate = CLLocationCoordinate2D(
@@ -60,6 +65,8 @@ let shortHash = coordinate.geohash(length: 5)
 ```
 
 The string-based API accepts geohash lengths from `1...22`.
+
+On Linux, the snippet above works unchanged. `FlitsGeohash` exposes a compatible coordinate type when `CoreLocation` is not available.
 
 ### Adjacent cells and neighbors
 
@@ -120,7 +127,7 @@ let regionHashes = Geohash3.hashesForRegion(
 swift test
 ```
 
-The test suite includes correctness checks and performance-oriented coverage for encoding, adjacency, neighbors, and region generation.
+The test suite includes correctness checks and performance-oriented coverage for encoding, adjacency, neighbors, and region generation, and CI runs on both macOS and Ubuntu.
 
 ## Contributing
 
