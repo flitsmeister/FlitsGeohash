@@ -1,5 +1,7 @@
 # FlitsGeohash
 
+
+[![Swift](https://github.com/flitsmeister/FlitsGeohash/actions/workflows/swift.yml/badge.svg)](https://github.com/flitsmeister/FlitsGeohash/actions/workflows/swift.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 `FlitsGeohash` is a Swift package for working with geohashes on Apple platforms and Linux. It wraps a small C implementation with a Swift-friendly API for encoding coordinates, finding adjacent cells, collecting neighbors, and generating the geohashes that cover a region.
