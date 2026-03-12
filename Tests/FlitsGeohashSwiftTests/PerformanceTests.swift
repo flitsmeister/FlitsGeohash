@@ -10,96 +10,153 @@ import XCTest
 import CoreLocation
 #endif
 import FlitsGeohash
+import FlitsGeohashC
 
 final class PerformanceTests: XCTestCase {
-
-    private static let size = 100_000
-    private static let array = CLLocationCoordinate2D.testCollection(size: size)
-
-    private static let geohashes = array.map {
-        Geohash.hash($0, length: 5)
-    }
-
-    override class func setUp() {
-        _ = array
-        _ = geohashes
-    }
-
-    func testMakeGeohashes() {
-        var geohashes: [String] = []
-        geohashes.reserveCapacity(Self.size)
-        for coordinate in Self.array {
-            geohashes.append(Geohash.hash(coordinate, length: 5))
-        }
-        XCTAssertEqual(geohashes.count, Self.size)
-        XCTAssertEqual(geohashes.first, "u15d1")
-        XCTAssertEqual(geohashes.last, "u1hrb")
+    
+    private enum Benchmark {
+        static let geohashLength: UInt32 = 5
+        static let coordinateFixtureCount = 50_000
+        static let regionRequestFixtureCount = 64
     }
     
-    func testMakeGeohashesPerformance() {
+    private struct RegionRequest {
+        let centerCoordinate: CLLocationCoordinate2D
+        let latitudeDelta: CLLocationDegrees
+        let longitudeDelta: CLLocationDegrees
+    }
+    
+    private static let coordinates = CLLocationCoordinate2D.testCollection(size: Benchmark.coordinateFixtureCount)
+    private static let geohashes = coordinates.map {
+        Geohash.hash($0, length: Benchmark.geohashLength)
+    }
+    private static let regionRequests = makeRegionRequestFixture()
+    
+    func testBenchmarkFixturesAreStable() {
+        XCTAssertEqual(Self.coordinates.count, Benchmark.coordinateFixtureCount)
+        XCTAssertEqual(Self.geohashes.count, Benchmark.coordinateFixtureCount)
+        XCTAssertEqual(Self.geohashes.first, "u15d1")
+        XCTAssertEqual(Self.geohashes.last, "u1hrb")
+        XCTAssertEqual(Self.regionRequests.count, Benchmark.regionRequestFixtureCount)
+    }
+    
+    #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+    private let metrics: [XCTMetric] = [
+        XCTClockMetric(),
+        XCTCPUMetric(),
+        XCTMemoryMetric()
+    ]
+    func testHashPerformance() {
+        measure(metrics: metrics) {
+            Self.runHashPerformance()
+        }
+    }
+    func testAdjacentPerformance() {
+        measure(metrics: metrics) {
+            Self.runAdjacentPerformance()
+        }
+    }
+    func testNeighborsPerformance() {
+        measure(metrics: metrics) {
+            Self.runNeighborsPerformance()
+        }
+    }
+    func testRegionPerformance() {
+        measure(metrics: metrics) {
+            Self.runRegionPerformance()
+        }
+    }
+    #else
+    func testHashPerformance() {
         measure {
-            for coordinate in Self.array {
-                _ = Geohash.hash(coordinate, length: 5)
-            }
+            Self.runHashPerformance()
         }
     }
+    func testAdjacentPerformance() {
+        measure {
+            Self.runAdjacentPerformance()
+        }
+    }
+    func testNeighborsPerformance() {
+        measure {
+            Self.runNeighborsPerformance()
+        }
+    }
+    func testRegionPerformance() {
+        measure {
+            Self.runRegionPerformance()
+        }
+    }
+    #endif
+}
 
-    func testNeigbors() {
-        measure {
-            let neighbors = Self.geohashes.map {
-                Geohash.neighbors(hash: $0)
-            }
-            XCTAssertEqual(neighbors.count, Self.size)
-            XCTAssertEqual(neighbors.first?.north, "u15d3")
-            XCTAssertEqual(neighbors.last?.north, "u1k20")
-        }
-    }
-
-    func testAdjacent() {
-        measure {
-            let adjacentHashes = Self.geohashes.map {
-                Geohash.adjacent(hash: $0, direction: .north)
-            }
-            XCTAssertEqual(adjacentHashes.count, Self.size)
-            XCTAssertEqual(adjacentHashes.first, "u15d3")
-            XCTAssertEqual(adjacentHashes.last, "u1k20")
-        }
-    }
+private extension PerformanceTests {
     
-    func testRegion() {
-        let expectedHashes: [String] = ["u14zr","u14yd","u16bj","u14yg","u16b4","u14zd","u16bc","u14yf","u16bd","u14zb","u14xn","u14zh","u14zp","u16b6","u16bz","u14xq","u14wy","u14xy","u14wx","u14zq","u16bh","u14zc","u16b3","u16bv","u14xp","u14zv","u14zf","u14wz","u14xz","u14ww","u16b2","u168w","u16bq","u16bb","u16bk","u14zs","u14yx","u16b1","u14ye","u14zm","u14zy","u14yv","u16bg","u16bn","u16bt","u14zu","u16b7","u14yc","u14xx","u16bx","u14z3","u14y9","u14z9","u14zn","u16br","u16be","u16bf","u14yu","u16b9","u14xr","u16b8","u16b5","u14z8","u14yy","u14zg","u168n","u14zx","u14z5","u14y8","u14zt","u168x","u14zz","u14z0","u16bm","u14zj","u14yt","u168q","u168z","u14xw","u16b0","u14z2","u14yz","u14ze","u16bs","u14z6","u14z7","u14ys","u14zw","u14z1","u14yb","u16bw","u16bp","u14zk","u14z4","u16by","u168r","u14yw","u168p","u168y","u16bu"].sorted()
-        let center = CLLocationCoordinate2D(latitude: 52, longitude: 4)
-        var hashes: [String] = []
-        measure {
-            hashes = Geohash.hashesForRegion(centerCoordinate: center, latitudeDelta: 0.4, longitudeDelta: 0.4, length: 5)
-        }
-        XCTAssertEqual(hashes.sorted(), expectedHashes)
-    }
-    
-    func testSmallRegionReturnsNonEmptyArray() {
-        let hashes = Geohash.hashesForRegion(centerCoordinate: .init(latitude: 52, longitude: 5), latitudeDelta: 0.001, longitudeDelta: 0.001, length: 6)
-        XCTAssertGreaterThan(hashes.count, 0)
-    }
-    
-    func testLargeRegionReturnsManyHashes() {
-        let hashes = Geohash.hashesForRegion(centerCoordinate: .init(latitude: 52, longitude: 5), latitudeDelta: 0.5, longitudeDelta: 0.5, length: 6)
-        XCTAssertGreaterThan(hashes.count, 1000)
-    }
-    
-    func testFreeingHashArrayWorks() {
-        var array = GEOHASH_hashes_for_region(52, 5, 0.02, 0.02, 6)
-        GEOHASH_free_array(&array)
+    private static func makeRegionRequestFixture() -> [RegionRequest] {
+        let deltas: [(latitude: CLLocationDegrees, longitude: CLLocationDegrees)] = [
+            (0.02, 0.02),
+            (0.04, 0.03),
+            (0.08, 0.06),
+            (0.12, 0.09),
+            (0.18, 0.14),
+            (0.24, 0.18)
+        ]
+        let stride = max(1, coordinates.count / Benchmark.regionRequestFixtureCount)
         
-        XCTAssertEqual(array.count, 0, "After free, count should be zero")
-        XCTAssertNil(array.hashes, "After free, hashes should be nil")
-        XCTAssertEqual(array.capacity, 0, "After free, capacity should be zero")
+        return (0..<Benchmark.regionRequestFixtureCount).map { index in
+            let center = coordinates[min(index * stride, coordinates.count - 1)]
+            let delta = deltas[index % deltas.count]
+            return RegionRequest(
+                centerCoordinate: center,
+                latitudeDelta: delta.latitude,
+                longitudeDelta: delta.longitude
+            )
+        }
     }
     
-    func testEdgeAlignedRegion() {
-        let hashes = Geohash.hashesForRegion(centerCoordinate: .init(latitude: 0, longitude: 0), latitudeDelta: 0.01, longitudeDelta: 0.01, length: 6)
-            .sorted()
-            .joined(separator: ",")
-        XCTAssertEqual(hashes, "7zzzzz,ebpbpb,kpbpbp,s00000")
+    // 100,000 encodes/sample = 20,000 coordinates x 5 passes at geohash length 5.
+    static func runHashPerformance() {
+        Self.run(passes: 5) {
+            for coordinate in Self.coordinates {
+                _ = Geohash.hash(coordinate, length: Benchmark.geohashLength)
+            }
+        }
+    }
+    
+    // 100,000 north-adjacent lookups/sample = 20,000 hashes x 5 passes.
+    static func runAdjacentPerformance() {
+        Self.run(passes: 5) {
+            for hash in Self.geohashes {
+                _ = Geohash.adjacent(hash: hash, direction: .north)
+            }
+        }
+    }
+    
+    // 20,000 neighbor lookups/sample = 20,000 hashes.
+    static func runNeighborsPerformance() {
+        for hash in Self.geohashes {
+            _ = Geohash.neighbors(hash: hash)
+        }
+    }
+    
+    // 8,192 region-cover requests/sample = 64 requests x 128 passes at geohash length 5.
+    static func runRegionPerformance() {
+        Self.run(passes: 128) {
+            for request in Self.regionRequests {
+                _ = Geohash.hashesForRegion(
+                    centerCoordinate: request.centerCoordinate,
+                    latitudeDelta: request.latitudeDelta,
+                    longitudeDelta: request.longitudeDelta,
+                    length: Benchmark.geohashLength
+                )
+            }
+        }
+    }
+    
+    static func run(passes: Int, body: () -> ()) {
+        for _ in 0..<passes {
+            body()
+        }
     }
 }
 

@@ -14,6 +14,8 @@ import Glibc
 import Darwin
 #endif
 
+import FlitsGeohashC
+
 public enum Geohash {
 
     public enum Direction: UInt32, Sendable {
