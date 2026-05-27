@@ -9,8 +9,8 @@
 ## Features
 
 - Encode `CLLocationCoordinate2D` values into geohash strings
-- Get adjacent geohashes in the four cardinal directions
-- Fetch all 8 neighboring geohashes
+- Get adjacent geohashes in the four cardinal directions, including boundary wraparound
+- Fetch all 8 neighboring geohashes, including boundary wraparound
 - Generate the geohashes that cover a map region
 - Use strongly typed fixed-length geohashes for common lengths
 - Use the same coordinate API on Linux without depending on `CoreLocation`
@@ -84,6 +84,16 @@ let neighbors = Geohash.neighbors(hash: hash)
 print(neighbors.east)       // "u4pruydqqvn"
 print(neighbors.southWest)  // "u4pruydqquu"
 print(neighbors.allNeighbors)
+```
+
+Boundary adjacent cells wrap deterministically instead of failing:
+
+```swift
+Geohash.adjacent(hash: "zzzzzz", direction: .east)
+// "bpbpbp"
+
+Geohash.adjacent(hash: "000000", direction: .west)
+// "pbpbpb"
 ```
 
 ### Cover a region with geohashes
