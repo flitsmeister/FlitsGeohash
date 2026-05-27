@@ -29,6 +29,21 @@ final class CorrectnessTests: XCTestCase {
         XCTAssertEqual(Geohash.adjacent(hash: Fixture.hash11, direction: .west), Fixture.west)
     }
 
+    func testGeohashAdjacentHandlesWorldBoundaryHashes() {
+        let cases: [(hash: String, direction: Geohash.Direction, expected: String)] = [
+            ("bpbpbp", .north, "000000"),
+            ("zzzzzz", .east, "bpbpbp"),
+            ("000000", .south, "bpbpbp"),
+            ("000000", .west, "pbpbpb")
+        ]
+
+        for testCase in cases {
+            let adjacent = Geohash.adjacent(hash: testCase.hash, direction: testCase.direction)
+
+            XCTAssertEqual(adjacent, testCase.expected)
+        }
+    }
+
     func testGeohashNeighborsAndNeighborSets() {
         let neighbors = Geohash.neighbors(hash: Fixture.hash11)
 
@@ -45,6 +60,24 @@ final class CorrectnessTests: XCTestCase {
             neighbors.allNeighbors(and: Fixture.hash11),
             Fixture.stringNeighbors.union([Fixture.hash11])
         )
+    }
+
+    func testGeohashNeighborsHandlesOriginAdjacentGeneratedHashes() {
+        let originAdjacentHashes = Geohash.hashesForRegion(
+            centerCoordinate: .init(latitude: 0, longitude: 0),
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+            length: 6
+        )
+
+        XCTAssertEqual(Set(originAdjacentHashes), Set(["7zzzzz", "ebpbpb", "kpbpbp", "s00000"]))
+
+        for hash in originAdjacentHashes {
+            let neighbors = Geohash.neighbors(hash: hash)
+
+            XCTAssertTrue(neighbors.allNeighbors.allSatisfy { $0.count == hash.count })
+            XCTAssertTrue(neighbors.allNeighbors.allSatisfy { !$0.isEmpty })
+        }
     }
 
     func testGeohashHashesForRegion() {

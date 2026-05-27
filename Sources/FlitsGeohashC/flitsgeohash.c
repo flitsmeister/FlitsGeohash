@@ -109,6 +109,9 @@ GEOHASH_get_neighbors(const char* hash)
 void
 GEOHASH_free_neighbors(GEOHASH_neighbors *neighbors)
 {
+    if (neighbors == NULL)
+        return;
+
     free(neighbors->north);
     free(neighbors->east);
     free(neighbors->west);
@@ -127,7 +130,18 @@ GEOHASH_get_adjacent(const char* hash, GEOHASH_direction dir)
     const char *border_table, *neighbor_table;
     char *base, *refined_base, *ptr, last;
 
+    if (hash == NULL)
+        return NULL;
+
     len  = strlen(hash);
+    if (len == 0) {
+        base = (char *)malloc(sizeof(char));
+        if (base == NULL)
+            return NULL;
+        base[0] = '\0';
+        return base;
+    }
+
     last = tolower(hash[len - 1]);
     idx  = dir * 2 + (len % 2);
 
