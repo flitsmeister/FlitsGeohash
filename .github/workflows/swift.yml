@@ -39,3 +39,13 @@ jobs:
       run: swift build -v
     - name: Run tests
       run: swift test -v
+    - name: Performance gates (enforced)
+      if: runner.os == 'macOS'
+      # Canonical gates are calibrated on bare-metal Apple Silicon; the
+      # scale factor absorbs shared-runner noise without moving them.
+      env:
+        GEOHASH_BENCH_GATE_SCALE: "3"
+      run: swift run -c release Benchmarks enforce
+    - name: Performance report (informational)
+      if: runner.os != 'macOS'
+      run: swift run -c release Benchmarks

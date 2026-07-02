@@ -1,27 +1,31 @@
 # FlitsGeohash
 
-
 [![Swift](https://github.com/flitsmeister/FlitsGeohash/actions/workflows/swift.yml/badge.svg)](https://github.com/flitsmeister/FlitsGeohash/actions/workflows/swift.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-`FlitsGeohash` is a Swift package for working with geohashes on Apple platforms and Linux. It wraps a small C implementation with a Swift-friendly API for encoding coordinates, finding adjacent cells, collecting neighbors, and generating the geohashes that cover a region.
+`FlitsGeohash` is a pure-Swift geohash library for Apple platforms and Linux.
+A `Geohash` is a value type packed into a single `UInt64`: encoding a
+coordinate takes ~12 ns, a neighbor lookup ~5 ns, and no operation on the
+packed form allocates. Use `Geohash` values as dictionary keys and set
+members directly — reach for `.string` only at the edges of your system.
+
+Migrating from 1.x? See [MIGRATION.md](MIGRATION.md).
 
 ## Features
 
-- Encode `CLLocationCoordinate2D` values into geohash strings
-- Get adjacent geohashes in the four cardinal directions, including boundary wraparound
-- Fetch all 8 neighboring geohashes, including boundary wraparound
-- Generate the geohashes that cover a map region
-- Use strongly typed fixed-length geohashes for common lengths
-- Use the same coordinate API on Linux without depending on `CoreLocation`
+- Encode `CLLocationCoordinate2D` into a `Geohash` of length 1...12
+- Cell geometry: `center`, `bounds`, and `prefix(_:)` for coarser cells
+- All 8 neighbors, with longitude wrapping at the antimeridian and honest
+  `nil` past the pole rows
+- `cells(intersecting:)` to cover a map region
+- `Hashable`, `Sendable`, and `Codable` (encodes as the base32 string)
+- Runs unchanged on Linux — a compatible `CLLocationCoordinate2D` is
+  provided where `CoreLocation` is unavailable
 
 ## Requirements
 
 - Swift 6.0+
-- Apple platforms where `CoreLocation` is available
-- Linux
-
-When `CoreLocation` is unavailable, `FlitsGeohash` provides compatible `CLLocationCoordinate2D`, `CLLocationDegrees`, and `CLLocationCoordinate2DIsValid` definitions so the public API stays the same across platforms.
+- Apple platforms or Linux
 
 ## Installation
 
@@ -29,7 +33,7 @@ Add the package to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/flitsmeister/FlitsGeohash.git", from: "1.3.0")
+    .package(url: "https://github.com/flitsmeister/FlitsGeohash.git", from: "2.0.0")
 ]
 ```
 
@@ -61,87 +65,108 @@ let coordinate = CLLocationCoordinate2D(
     longitude: 10.40743969380855
 )
 
-let hash = Geohash.hash(coordinate, length: 11)
-// "u4pruydqqvj"
+let geohash = Geohash(coordinate, length: 11)   // nil for invalid input
+geohash?.string                                  // "u4pruydqqvj"
+geohash?.prefix(5).string                        // "u4pru"
 
-let shortHash = coordinate.geohash(length: 5)
-// "u4pru"
+Geohash(string: "u4pru")                         // parse back from base32
 ```
 
-The string-based API accepts geohash lengths from `1...22`.
+A coordinate exactly on a cell boundary belongs to the higher cell (the
+canonical rule shared by mainstream implementations).
 
-On Linux, the snippet above works unchanged. `FlitsGeohash` exposes a compatible coordinate type when `CoreLocation` is not available.
-
-### Adjacent cells and neighbors
+### Cell geometry
 
 ```swift
-let hash = "u4pruydqqvj"
-
-let north = Geohash.adjacent(hash: hash, direction: .north)
-// "u4pruydqqvm"
-
-let neighbors = Geohash.neighbors(hash: hash)
-print(neighbors.east)       // "u4pruydqqvn"
-print(neighbors.southWest)  // "u4pruydqquu"
-print(neighbors.allNeighbors)
+let cell = Geohash(string: "u4pru")!
+cell.center            // CLLocationCoordinate2D in the middle of the cell
+cell.bounds            // (latitudeDelta: 0.0439..., longitudeDelta: 0.0439...)
+cell.length            // 5
 ```
 
-Boundary adjacent cells wrap deterministically instead of failing:
+### Neighbors
 
 ```swift
-Geohash.adjacent(hash: "zzzzzz", direction: .east)
-// "bpbpbp"
+let neighbors = cell.neighbors()   // fixed struct, no allocation
+neighbors.east                     // always exists: longitude wraps
+neighbors.north                    // optional: nil in the top latitude row
 
-Geohash.adjacent(hash: "000000", direction: .west)
-// "pbpbpb"
+cell.neighbor(.southWest)          // single step, ~5 ns
+cell.allNeighborsAndSelf()         // [Geohash], 9 cells (6 in a pole row)
 ```
 
-### Cover a region with geohashes
+There is nothing north of the pole row, so `neighbor(.north)` on a top-row
+cell like `"zzzz"` returns `nil` rather than wrapping. East and west wrap at
+the antimeridian and always exist.
+
+### Cover a region
 
 ```swift
-let hashes = Geohash.hashesForRegion(
-    centerCoordinate: .init(latitude: 57.64911063015461, longitude: 10.40743969380855),
+let cells = Geohash.cells(
+    intersecting: coordinate,
     latitudeDelta: 2,
     longitudeDelta: 2,
     length: 3
 )
-
-print(hashes.sorted())
+cells.map(\.string).sorted()
 // ["u4n", "u4p", "u4q", "u4r", "u60", "u62"]
 ```
 
-### Use fixed-length geohash types
+The result size is capped (`maxCells:` parameter, default 10,000): a box
+covering more cells than that — say a zoomed-out viewport at a fine length —
+returns `[]` instead of allocating millions of cells. Use a shorter length
+or split the box.
 
-For stricter code, the package also exposes typed geohashes for lengths `1...11`:
+### Keys, sets, and Codable
+
+`Geohash` equality and hashing are single `UInt64` operations, and hashes of
+different lengths never collide as keys:
 
 ```swift
-let geohash = Geohash11(coordinate)
-print(geohash.string) // "u4pruydqqvj"
-
-let neighbors = geohash.neighbors()
-print(neighbors.north.string) // "u4pruydqqvm"
-
-let lowerPrecision: Geohash5? = geohash.toLowerLength()
-print(lowerPrecision?.string as Any) // Optional("u4pru")
+var index: [Geohash: [Place]] = [:]
+index[Geohash(place.coordinate, length: 7)!, default: []].append(place)
 ```
 
-Typed region coverage is also available:
+`Codable` uses the base32 string, so encoded payloads are interchangeable
+with plain geohash strings:
 
 ```swift
-let regionHashes = Geohash3.hashesForRegion(
-    centerCoordinate: .init(latitude: 57.64911063015461, longitude: 10.40743969380855),
+try JSONEncoder().encode([cell])   // ["u4pru"]
+```
+
+### Fixed-length types
+
+When a geohash length is an invariant of your data model, the typed wrappers
+make it a compile-time guarantee. `LengthedGeohash` wraps the packed
+`Geohash` (same 8 bytes, exposed as `.geohash`):
+
+```swift
+let typed = Geohash7(coordinate)               // LengthedGeohash<GeohashLength7>
+typed.neighbors().east                         // also a Geohash7
+let coarser: Geohash5? = typed.toLowerLength()
+
+Geohash3.hashesForRegion(
+    centerCoordinate: coordinate,
     latitudeDelta: 2,
     longitudeDelta: 2
 )
 ```
 
-## Running Tests
+Aliases `Geohash1` through `Geohash12` are provided. Note that, as in 1.x,
+these initializers are non-failable and trap on invalid input — validate
+with the failable `Geohash` initializers first when the input is untrusted.
+
+## Testing & benchmarks
 
 ```bash
-swift test
+swift test                                # correctness, 108k golden fixtures, property tests
+swift run -c release Benchmarks           # performance report
+swift run -c release Benchmarks enforce   # fail on gate violations (used in CI)
 ```
 
-The test suite includes correctness checks and performance-oriented coverage for encoding, adjacency, neighbors, and region generation, and CI runs on both macOS and Ubuntu.
+The golden fixtures were generated with the 1.x C implementation before it
+was removed, so 2.0 is verified bit-for-bit compatible outside the
+documented behavioral changes. CI runs on macOS and Ubuntu.
 
 ## Contributing
 

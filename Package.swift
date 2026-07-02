@@ -12,14 +12,18 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "FlitsGeohash",
-            dependencies: ["FlitsGeohashC"],
-            path: "Sources/FlitsGeohashSwift"
+            name: "FlitsGeohash"
         ),
-        .target(name: "FlitsGeohashC"),
-        .testTarget(
-            name: "FlitsGeohashSwiftTests",
+        .executableTarget(
+            name: "Benchmarks",
             dependencies: ["FlitsGeohash"]
+        ),
+        .testTarget(
+            name: "FlitsGeohashTests",
+            dependencies: ["FlitsGeohash"],
+            resources: [
+                .copy("Fixtures")
+            ]
         )
     ]
 )
