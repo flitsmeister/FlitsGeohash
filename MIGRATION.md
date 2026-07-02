@@ -19,7 +19,7 @@ logging).
 | `Geohash.adjacent(hash: s, direction: .north)` | `Geohash(string: s)?.neighbor(.north)` |
 | `Geohash.neighbors(hash: s)` | `Geohash(string: s)?.neighbors()` |
 | `neighbors.allNeighbors(and: hash)` | `geohash.allNeighborsAndSelf()` |
-| `Geohash.hashesForRegion(centerCoordinate:latitudeDelta:longitudeDelta:length:)` | `Geohash.cells(intersecting:latitudeDelta:longitudeDelta:length:)` |
+| `Geohash.hashesForRegion(centerCoordinate:latitudeDelta:longitudeDelta:length:)` | `Geohash.cells(intersecting:latitudeDelta:longitudeDelta:length:)` — result size now capped (`maxCells:`, default 10,000; `[]` beyond it) |
 | `Geohash7(coordinate)`, `LengthedGeohash<...>` | `Geohash(coordinate, length: 7)` — the packed type replaces the typed-length family |
 | `lengthed.toLowerLength()` | `geohash.prefix(shorterLength)` |
 | `Geohash.Direction` (4 cardinal cases) | `Geohash.Direction` (8 cases, including diagonals) |

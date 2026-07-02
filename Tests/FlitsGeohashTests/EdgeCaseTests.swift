@@ -237,6 +237,43 @@ final class EdgeCaseTests: XCTestCase {
         )
     }
 
+    func testRegionCellCountIsCapped() {
+        // A world-spanning box at length 5 covers ~33M cells; the cap turns
+        // that into an empty result instead of a giant allocation.
+        let world = Geohash.cells(
+            intersecting: .init(latitude: 0, longitude: 0),
+            latitudeDelta: 180,
+            longitudeDelta: 360,
+            length: 5
+        )
+        XCTAssertEqual(world, [])
+
+        // The same box at length 1 is all 32 cells — well under the cap.
+        let coarse = Geohash.cells(
+            intersecting: .init(latitude: 0, longitude: 0),
+            latitudeDelta: 180,
+            longitudeDelta: 360,
+            length: 1
+        )
+        XCTAssertEqual(coarse.count, 32)
+
+        // An explicit cap is honored exactly: the origin region covers
+        // 4 cells, so 4 succeeds and 3 does not.
+        let center = CLLocationCoordinate2D(latitude: 0, longitude: 0)
+        XCTAssertEqual(
+            Geohash.cells(intersecting: center, latitudeDelta: 0.01, longitudeDelta: 0.01, length: 6, maxCells: 4).count,
+            4
+        )
+        XCTAssertEqual(
+            Geohash.cells(intersecting: center, latitudeDelta: 0.01, longitudeDelta: 0.01, length: 6, maxCells: 3),
+            []
+        )
+        XCTAssertEqual(
+            Geohash.cells(intersecting: center, latitudeDelta: 0.01, longitudeDelta: 0.01, length: 6, maxCells: -1),
+            []
+        )
+    }
+
     func testRegionClampsAtWorldEdges() {
         let cells = Geohash.cells(
             intersecting: .init(latitude: 89.9, longitude: 179.9),

@@ -112,6 +112,11 @@ cells.map(\.string).sorted()
 // ["u4n", "u4p", "u4q", "u4r", "u60", "u62"]
 ```
 
+The result size is capped (`maxCells:` parameter, default 10,000): a box
+covering more cells than that — say a zoomed-out viewport at a fine length —
+returns `[]` instead of allocating millions of cells. Use a shorter length
+or split the box.
+
 ### Keys, sets, and Codable
 
 `Geohash` equality and hashing are single `UInt64` operations, and hashes of

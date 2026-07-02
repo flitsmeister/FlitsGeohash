@@ -22,7 +22,9 @@ for the full old→new mapping.
 - **Breaking:** geohash length is capped at 12 (~3.7 cm cells); 1.x allowed
   up to 22.
 - `hashesForRegion` is now `Geohash.cells(intersecting:latitudeDelta:longitudeDelta:length:)`
-  and returns packed values.
+  and returns packed values. Unlike 1.x it caps the result size (`maxCells:`
+  parameter, default 10,000) and returns an empty array beyond it, instead
+  of attempting a multi-million-cell allocation for oversized boxes.
 
 ### Removed
 

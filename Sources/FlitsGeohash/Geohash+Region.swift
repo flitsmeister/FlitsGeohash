@@ -16,11 +16,18 @@ extension Geohash {
     /// box does not wrap across the antimeridian or the poles. Returns an
     /// empty array for an invalid center, non-finite or negative deltas,
     /// or a length outside 1...12.
+    ///
+    /// `maxCells` bounds the size of the result: when the box covers more
+    /// cells than that (a zoomed-out viewport at a fine length can cover
+    /// millions), the function returns an empty array instead of building
+    /// an arbitrarily large one. Callers that hit the cap should use a
+    /// shorter length or split the box.
     public static func cells(
         intersecting center: CLLocationCoordinate2D,
         latitudeDelta: CLLocationDegrees,
         longitudeDelta: CLLocationDegrees,
-        length: Int
+        length: Int,
+        maxCells: Int = 10_000
     ) -> [Geohash] {
         guard length >= 1, length <= 12,
               center.latitude >= -90, center.latitude <= 90,
@@ -44,8 +51,12 @@ extension Geohash {
         let minY = axisIndex(minLatitude, offset: 90, span: 180, bits: latitudeBits)
         let maxY = axisIndex(maxLatitude, offset: 90, span: 180, bits: latitudeBits)
 
+        // Ranges fit in 30 bits per axis, so the product cannot overflow UInt64.
+        let cellCount = (maxX - minX + 1) * (maxY - minY + 1)
+        guard cellCount <= UInt64(max(maxCells, 0)) else { return [] }
+
         var result: [Geohash] = []
-        result.reserveCapacity(Int(maxX - minX + 1) * Int(maxY - minY + 1))
+        result.reserveCapacity(Int(cellCount))
         for y in minY...maxY {
             for x in minX...maxX {
                 result.append(Geohash(x: x, y: y, length: length))
