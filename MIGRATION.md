@@ -59,7 +59,8 @@ Longitude still wraps at the antimeridian: `east` and `west` always exist.
 data-driven input. 2.0's initializers are failable: `Geohash(coordinate,
 length:)` and `Geohash(string:)` return `nil` for out-of-range coordinates,
 lengths outside `1...12`, or malformed strings. `Geohash.cells(intersecting:)`
-returns `[]` for invalid input.
+returns `[]` for invalid input. (`LengthedGeohash` is the exception: its
+initializers keep the non-failable v1 signatures and trap — see below.)
 
 ### Length is capped at 12
 
@@ -73,8 +74,10 @@ The typed-length family (`LengthedGeohash<Length>`, `GeohashLengthed`,
 shape, but wraps the packed `Geohash` (exposed as the `geohash` property)
 and follows the v2 semantics:
 
-- `init(string:)` and `init(_ coordinate:)` are failable instead of
-  asserting/trapping.
+- `init(string:)` and `init(_ coordinate:)` are non-failable exactly as in
+  v1 and trap on invalid input. For a non-trapping path, build a packed
+  `Geohash` first and use the new `init?(_ geohash:)`, which returns `nil`
+  on a length mismatch.
 - `neighbors()` has optional pole-facing fields, and
   `adjacent(direction:)` returns `nil` past a pole row; `Direction` now
   includes the diagonals.

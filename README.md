@@ -141,9 +141,9 @@ make it a compile-time guarantee. `LengthedGeohash` wraps the packed
 `Geohash` (same 8 bytes, exposed as `.geohash`):
 
 ```swift
-let typed = Geohash7(coordinate)               // LengthedGeohash<GeohashLength7>?
-typed?.neighbors().east                        // also a Geohash7
-let coarser: Geohash5? = typed?.toLowerLength()
+let typed = Geohash7(coordinate)               // LengthedGeohash<GeohashLength7>
+typed.neighbors().east                         // also a Geohash7
+let coarser: Geohash5? = typed.toLowerLength()
 
 Geohash3.hashesForRegion(
     centerCoordinate: coordinate,
@@ -152,7 +152,9 @@ Geohash3.hashesForRegion(
 )
 ```
 
-Aliases `Geohash1` through `Geohash12` are provided.
+Aliases `Geohash1` through `Geohash12` are provided. Note that, as in 1.x,
+these initializers are non-failable and trap on invalid input — validate
+with the failable `Geohash` initializers first when the input is untrusted.
 
 ## Testing & benchmarks
 

@@ -78,21 +78,29 @@ public struct LengthedGeohash<Length: GeohashLengthed>: Hashable, Sendable {
         self.geohash = geohash
     }
 
-    /// Encodes a coordinate at `Length.length`. Returns `nil` for an
-    /// invalid coordinate (v1 trapped instead).
+    /// Encodes a coordinate at `Length.length`.
+    ///
+    /// - Precondition: the coordinate is valid (latitude -90...90,
+    ///   longitude -180...180), as in v1. Use `Geohash(_:length:)` and
+    ///   `init?(_ geohash:)` for a non-trapping path.
     @inlinable
-    public init?(_ coordinate: CLLocationCoordinate2D) {
-        guard let geohash = Geohash(coordinate, length: Length.length) else { return nil }
+    public init(_ coordinate: CLLocationCoordinate2D) {
+        guard let geohash = Geohash(coordinate, length: Length.length) else {
+            preconditionFailure("coordinate is invalid")
+        }
         self.geohash = geohash
     }
 
     /// Parses a base32 string of exactly `Length.length` characters.
-    /// Returns `nil` for a malformed string or a length mismatch (v1
-    /// asserted instead).
+    ///
+    /// - Precondition: the string is a valid geohash of exactly
+    ///   `Length.length` characters, as in v1. Use `Geohash(string:)` and
+    ///   `init?(_ geohash:)` for a non-trapping path.
     @inlinable
-    public init?(string: String) {
-        guard let geohash = Geohash(string: string), geohash.length == Length.length else {
-            return nil
+    public init(string: String) {
+        let expectedLength = Length.length
+        guard let geohash = Geohash(string: string), geohash.length == expectedLength else {
+            preconditionFailure("string is not a valid geohash of length \(expectedLength)")
         }
         self.geohash = geohash
     }
@@ -107,25 +115,31 @@ public struct LengthedGeohash<Length: GeohashLengthed>: Hashable, Sendable {
         geohash.string
     }
 
+    @usableFromInline
+    internal static func wrap(_ geohash: Geohash?) -> LengthedGeohash? {
+        guard let geohash else { return nil }
+        return LengthedGeohash(unchecked: geohash)
+    }
+
     /// The adjacent cell in the given direction; `nil` past the pole rows,
     /// like `Geohash.neighbor(_:)`.
     @inlinable
     public func adjacent(direction: Geohash.Direction) -> LengthedGeohash? {
-        geohash.neighbor(direction).map(LengthedGeohash.init(unchecked:))
+        LengthedGeohash.wrap(geohash.neighbor(direction))
     }
 
     @inlinable
     public func neighbors() -> Neighbors {
         let neighbors = geohash.neighbors()
         return Neighbors(
-            north: neighbors.north.map(LengthedGeohash.init(unchecked:)),
-            northEast: neighbors.northEast.map(LengthedGeohash.init(unchecked:)),
+            north: LengthedGeohash.wrap(neighbors.north),
+            northEast: LengthedGeohash.wrap(neighbors.northEast),
             east: LengthedGeohash(unchecked: neighbors.east),
-            southEast: neighbors.southEast.map(LengthedGeohash.init(unchecked:)),
-            south: neighbors.south.map(LengthedGeohash.init(unchecked:)),
-            southWest: neighbors.southWest.map(LengthedGeohash.init(unchecked:)),
+            southEast: LengthedGeohash.wrap(neighbors.southEast),
+            south: LengthedGeohash.wrap(neighbors.south),
+            southWest: LengthedGeohash.wrap(neighbors.southWest),
             west: LengthedGeohash(unchecked: neighbors.west),
-            northWest: neighbors.northWest.map(LengthedGeohash.init(unchecked:))
+            northWest: LengthedGeohash.wrap(neighbors.northWest)
         )
     }
 
@@ -146,14 +160,19 @@ public struct LengthedGeohash<Length: GeohashLengthed>: Hashable, Sendable {
         longitudeDelta: CLLocationDegrees,
         maxCells: Int = 10_000
     ) -> [LengthedGeohash] {
-        Geohash.cells(
+        let cells = Geohash.cells(
             intersecting: centerCoordinate,
             latitudeDelta: latitudeDelta,
             longitudeDelta: longitudeDelta,
             length: Length.length,
             maxCells: maxCells
         )
-        .map(LengthedGeohash.init(unchecked:))
+        var result: [LengthedGeohash] = []
+        result.reserveCapacity(cells.count)
+        for cell in cells {
+            result.append(LengthedGeohash(unchecked: cell))
+        }
+        return result
     }
 }
 

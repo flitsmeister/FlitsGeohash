@@ -2,8 +2,9 @@
 //  LengthedGeohashTests.swift
 //
 //  The typed-length wrapper over the packed Geohash, mirroring the v1
-//  LengthedGeohash test coverage plus the v2 semantics (failable inits,
-//  optional pole-row neighbors).
+//  LengthedGeohash test coverage plus the v2 semantics (optional
+//  pole-row neighbors). The coordinate and string initializers are
+//  non-failable and trap on invalid input, exactly as in v1.
 //
 
 import XCTest
@@ -40,20 +41,19 @@ final class LengthedGeohashTests: XCTestCase {
     }
 
     func testInitializers() throws {
-        XCTAssertEqual(Geohash11(coordinate)?.string, "u4pruydqqvj")
-        XCTAssertEqual(Geohash5(string: "u4pru")?.string, "u4pru")
+        // As in v1, the coordinate and string initializers are non-failable
+        // and trap on invalid input, so only valid inputs can be tested here.
+        XCTAssertEqual(Geohash11(coordinate).string, "u4pruydqqvj")
+        XCTAssertEqual(Geohash5(string: "u4pru").string, "u4pru")
 
+        // The packed-geohash initializer is the non-trapping path.
         let packed = try XCTUnwrap(Geohash(string: "u4pru"))
         XCTAssertEqual(Geohash5(packed)?.geohash, packed)
         XCTAssertNil(Geohash6(packed), "length mismatch must fail")
-
-        XCTAssertNil(Geohash5(string: "u4pruy"), "wrong string length must fail")
-        XCTAssertNil(Geohash5(string: "u4prA"), "invalid alphabet must fail")
-        XCTAssertNil(Geohash5(.init(latitude: 91, longitude: 0)), "invalid coordinate must fail")
     }
 
     func testAdjacent() throws {
-        let geohash = try XCTUnwrap(Geohash11(string: "u4pruydqqvj"))
+        let geohash = Geohash11(string: "u4pruydqqvj")
 
         XCTAssertEqual(geohash.adjacent(direction: .north), Geohash11(string: "u4pruydqqvm"))
         XCTAssertEqual(geohash.adjacent(direction: .east), Geohash11(string: "u4pruydqqvn"))
@@ -63,7 +63,7 @@ final class LengthedGeohashTests: XCTestCase {
     }
 
     func testNeighborsAndNeighborSets() throws {
-        let geohash = try XCTUnwrap(Geohash11(string: "u4pruydqqvj"))
+        let geohash = Geohash11(string: "u4pruydqqvj")
         let neighbors = geohash.neighbors()
 
         XCTAssertEqual(neighbors.north?.string, "u4pruydqqvm")
@@ -78,14 +78,14 @@ final class LengthedGeohashTests: XCTestCase {
         let expected = Set(
             ["u4pruydqqvm", "u4pruydqquv", "u4pruydqqvh", "u4pruydqqvn",
              "u4pruydqqvk", "u4pruydqqvq", "u4pruydqquu", "u4pruydqquy"]
-                .compactMap(Geohash11.init(string:))
+                .map(Geohash11.init(string:))
         )
         XCTAssertEqual(neighbors.allNeighbors, expected)
         XCTAssertEqual(neighbors.allNeighbors(and: geohash), expected.union([geohash]))
     }
 
     func testPoleRowNeighborsAreNil() throws {
-        let topRow = try XCTUnwrap(Geohash6(string: "zzzzzz"))
+        let topRow = Geohash6(string: "zzzzzz")
         let neighbors = topRow.neighbors()
 
         XCTAssertNil(neighbors.north)
@@ -97,7 +97,7 @@ final class LengthedGeohashTests: XCTestCase {
     }
 
     func testToLowerLength() throws {
-        let geohash11 = try XCTUnwrap(Geohash11(coordinate))
+        let geohash11 = Geohash11(coordinate)
 
         let geohash10: Geohash10? = geohash11.toLowerLength()
         let geohash2: Geohash2? = geohash11.toLowerLength()
@@ -133,7 +133,7 @@ final class LengthedGeohashTests: XCTestCase {
     }
 
     func testCodableRoundTripsAsBase32String() throws {
-        let geohash = try XCTUnwrap(Geohash5(string: "u4pru"))
+        let geohash = Geohash5(string: "u4pru")
         let data = try JSONEncoder().encode([geohash])
         XCTAssertEqual(String(data: data, encoding: .utf8), #"["u4pru"]"#)
         XCTAssertEqual(try JSONDecoder().decode([Geohash5].self, from: data), [geohash])
@@ -141,7 +141,7 @@ final class LengthedGeohashTests: XCTestCase {
     }
 
     func testPackedInterop() throws {
-        let typed = try XCTUnwrap(Geohash7(coordinate))
+        let typed = Geohash7(coordinate)
         let packed = try XCTUnwrap(Geohash(coordinate, length: 7))
         XCTAssertEqual(typed.geohash, packed)
         XCTAssertEqual(typed.string, packed.string)
