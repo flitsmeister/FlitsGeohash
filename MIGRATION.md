@@ -20,8 +20,8 @@ logging).
 | `Geohash.neighbors(hash: s)` | `Geohash(string: s)?.neighbors()` |
 | `neighbors.allNeighbors(and: hash)` | `geohash.allNeighborsAndSelf()` |
 | `Geohash.hashesForRegion(centerCoordinate:latitudeDelta:longitudeDelta:length:)` | `Geohash.cells(intersecting:latitudeDelta:longitudeDelta:length:)` — result size now capped (`maxCells:`, default 10,000; `[]` beyond it) |
-| `Geohash7(coordinate)`, `LengthedGeohash<...>` | `Geohash(coordinate, length: 7)` — the packed type replaces the typed-length family |
-| `lengthed.toLowerLength()` | `geohash.prefix(shorterLength)` |
+| `Geohash7(coordinate)`, `LengthedGeohash<...>` | Still available (now wrapping the packed type), or use `Geohash(coordinate, length: 7)` directly |
+| `lengthed.toLowerLength()` | `lengthed.toLowerLength()` / `geohash.prefix(shorterLength)` |
 | `Geohash.Direction` (4 cardinal cases) | `Geohash.Direction` (8 cases, including diagonals) |
 
 `Geohash` is `Hashable`, `Sendable`, and `Codable` (encoded as its base32
@@ -66,12 +66,27 @@ returns `[]` for invalid input.
 1.x accepted lengths up to 22. Length 12 already resolves to ~3.7 cm cells;
 longer hashes served no purpose and do not fit the packed representation.
 
+## LengthedGeohash
+
+The typed-length family (`LengthedGeohash<Length>`, `GeohashLengthed`,
+`Geohash1...11` — now also `Geohash12`) is still available and keeps its v1
+shape, but wraps the packed `Geohash` (exposed as the `geohash` property)
+and follows the v2 semantics:
+
+- `init(string:)` and `init(_ coordinate:)` are failable instead of
+  asserting/trapping.
+- `neighbors()` has optional pole-facing fields, and
+  `adjacent(direction:)` returns `nil` past a pole row; `Direction` now
+  includes the diagonals.
+- `hashesForRegion(centerCoordinate:latitudeDelta:longitudeDelta:)` remains,
+  with the same `maxCells` cap as `Geohash.cells(intersecting:)`.
+
 ## Removed
 
 - The `FlitsGeohashC` target (no more C interop; trivially portable to Linux).
-- `LengthedGeohash`, `GeohashLengthed`, `GeohashLength1...11`, and the
-  `Geohash1...11` type aliases.
-- The `String`-based static API on `Geohash`.
+- The `String`-based static API on `Geohash`
+  (`Geohash.hash`, `Geohash.adjacent`, `Geohash.neighbors`,
+  `Geohash.hashesForRegion`).
 
 ## Adoption notes for consumers
 

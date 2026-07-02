@@ -134,6 +134,26 @@ with plain geohash strings:
 try JSONEncoder().encode([cell])   // ["u4pru"]
 ```
 
+### Fixed-length types
+
+When a geohash length is an invariant of your data model, the typed wrappers
+make it a compile-time guarantee. `LengthedGeohash` wraps the packed
+`Geohash` (same 8 bytes, exposed as `.geohash`):
+
+```swift
+let typed = Geohash7(coordinate)               // LengthedGeohash<GeohashLength7>?
+typed?.neighbors().east                        // also a Geohash7
+let coarser: Geohash5? = typed?.toLowerLength()
+
+Geohash3.hashesForRegion(
+    centerCoordinate: coordinate,
+    latitudeDelta: 2,
+    longitudeDelta: 2
+)
+```
+
+Aliases `Geohash1` through `Geohash12` are provided.
+
 ## Testing & benchmarks
 
 ```bash

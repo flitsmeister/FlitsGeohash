@@ -8,8 +8,10 @@ for the full old→new mapping.
 ### Changed
 
 - **Breaking:** `Geohash` is now a packed value type (`Hashable`, `Sendable`,
-  `Codable`) replacing both the `String`-based static API and the
-  `LengthedGeohash` family.
+  `Codable`) replacing the `String`-based static API. The `LengthedGeohash`
+  family keeps its 1.x shape (plus a new `Geohash12`) but wraps the packed
+  type and follows the new semantics: failable initializers, optional
+  pole-facing neighbors, and an 8-direction `Direction`.
 - **Breaking:** canonical `>=` boundary rule — a coordinate exactly on a cell
   boundary now belongs to the higher cell, matching every mainstream
   implementation. 1.x used `>`. Only exactly grid-aligned coordinates are
