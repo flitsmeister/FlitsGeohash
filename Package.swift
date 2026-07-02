@@ -17,6 +17,10 @@ let package = Package(
             path: "Sources/FlitsGeohashSwift"
         ),
         .target(name: "FlitsGeohashC"),
+        .executableTarget(
+            name: "FixtureGen",
+            dependencies: ["FlitsGeohash"]
+        ),
         .testTarget(
             name: "FlitsGeohashSwiftTests",
             dependencies: ["FlitsGeohash"]
