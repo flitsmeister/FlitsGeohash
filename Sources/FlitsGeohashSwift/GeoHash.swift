@@ -8,7 +8,9 @@
 #if canImport(CoreLocation)
 import CoreLocation
 #endif
-#if os(Linux)
+#if os(Android)
+import Android
+#elseif os(Linux)
 import Glibc
 #else
 import Darwin

@@ -4,7 +4,7 @@
 [![Swift](https://github.com/flitsmeister/FlitsGeohash/actions/workflows/swift.yml/badge.svg)](https://github.com/flitsmeister/FlitsGeohash/actions/workflows/swift.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-`FlitsGeohash` is a Swift package for working with geohashes on Apple platforms and Linux. It wraps a small C implementation with a Swift-friendly API for encoding coordinates, finding adjacent cells, collecting neighbors, and generating the geohashes that cover a region.
+`FlitsGeohash` is a Swift package for working with geohashes on Apple platforms, Linux, and Android. It wraps a small C implementation with a Swift-friendly API for encoding coordinates, finding adjacent cells, collecting neighbors, and generating the geohashes that cover a region.
 
 ## Features
 
@@ -13,13 +13,14 @@
 - Fetch all 8 neighboring geohashes, including boundary wraparound
 - Generate the geohashes that cover a map region
 - Use strongly typed fixed-length geohashes for common lengths
-- Use the same coordinate API on Linux without depending on `CoreLocation`
+- Use the same coordinate API on Linux and Android without depending on `CoreLocation`
 
 ## Requirements
 
 - Swift 6.0+
 - Apple platforms where `CoreLocation` is available
 - Linux
+- Android with a matching Swift Android SDK and NDK (verified with Swift 6.4.0 and NDK r30)
 
 When `CoreLocation` is unavailable, `FlitsGeohash` provides compatible `CLLocationCoordinate2D`, `CLLocationDegrees`, and `CLLocationCoordinate2DIsValid` definitions so the public API stays the same across platforms.
 
@@ -70,7 +71,7 @@ let shortHash = coordinate.geohash(length: 5)
 
 The string-based API accepts geohash lengths from `1...22`.
 
-On Linux, the snippet above works unchanged. `FlitsGeohash` exposes a compatible coordinate type when `CoreLocation` is not available.
+On Linux and Android, the snippet above works unchanged. `FlitsGeohash` exposes a compatible coordinate type when `CoreLocation` is not available.
 
 ### Adjacent cells and neighbors
 
@@ -142,6 +143,25 @@ swift test
 ```
 
 The test suite includes correctness checks and performance-oriented coverage for encoding, adjacency, neighbors, and region generation, and CI runs on both macOS and Ubuntu.
+
+## Android builds
+
+Use the same Swift compiler version as your consuming app, together with its
+matching Swift Android SDK. Detour pins that version in `.swift-version`; this
+package keeps its Swift 6.0 minimum and does not introduce a separate version pin.
+
+With Swift 6.4.0, its Android SDK installed, and NDK r30 available:
+
+```bash
+export ANDROID_NDK_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}/ndk/android-ndk-r30"
+swift build -c release --swift-sdk swift-6.4.0-RELEASE_android --triple aarch64-unknown-linux-android29
+swift build -c release --swift-sdk swift-6.4.0-RELEASE_android --triple x86_64-unknown-linux-android29
+```
+
+Here, `swift` must resolve to the matching open-source toolchain. These commands
+cross-compile the Swift wrapper and C implementation without an emulator. Running
+Android tests requires an Android device or emulator. Kotlin callers use the
+consuming library's JNI bridge; this package remains a Swift package.
 
 ## Contributing
 
