@@ -112,11 +112,10 @@ public enum Geohash {
 extension Geohash {
 
     private static func string(from cString: UnsafePointer<CChar>) -> String {
-        guard let value = String(
-            cString: cString,
-            encoding: .ascii
-        ) else {
-            // This should never happen
+        guard
+            let value = String(validatingCString: cString),
+            value.utf8.allSatisfy({ $0 < 128 })
+        else {
             fatalError("Could not create String from cString")
         }
         return value

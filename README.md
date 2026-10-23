@@ -14,6 +14,7 @@
 - Generate the geohashes that cover a map region
 - Use strongly typed fixed-length geohashes for common lengths
 - Use the same coordinate API on Linux and Android without depending on `CoreLocation`
+- No Foundation dependency on Linux or Android
 
 ## Requirements
 

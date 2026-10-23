@@ -8,8 +8,6 @@
 #if canImport(CoreLocation)
 import CoreLocation
 #else
-import Foundation
-
 public typealias CLLocationDegrees = Double
 
 public struct CLLocationCoordinate2D: Sendable {
